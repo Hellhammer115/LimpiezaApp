@@ -273,3 +273,4 @@ export default function Home() {
     </SafeAreaView>
   );
 }
+2
