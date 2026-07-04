@@ -1,0 +1,12 @@
+# Supabase CLI configuration.
+# `verify_jwt = false` on mp-webhook is required: Mercado Pago calls it
+# server-to-server without a user JWT. The function authenticates the request
+# itself by validating the x-signature HMAC header instead.
+
+project_id = "limpiezaapp"
+
+[functions.create-order]
+verify_jwt = true
+
+[functions.mp-webhook]
+verify_jwt = false
