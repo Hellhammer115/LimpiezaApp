@@ -6,7 +6,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { CategoryTile } from "@/components/CategoryTile";
 import { ProductCard } from "@/components/ProductCard";
 import { PromoCarousel } from "@/components/PromoCarousel";
-import { DEMO_MODE } from "@/lib/demo";
 import {
   FREE_DELIVERY_THRESHOLD_CENTS,
 } from "@/lib/delivery";
@@ -32,15 +31,6 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-6"
       >
-        {/* Demo badge: visible confirmation that the demo bundle is running */}
-        {DEMO_MODE ? (
-          <View className="mx-5 mt-2 self-start rounded-full bg-citrus px-3 py-1">
-            <Text className="font-quicksand-bold text-[11px] text-dark-100">
-              DEMO · sin cuenta
-            </Text>
-          </View>
-        ) : null}
-
         {/* Header */}
         <View className="flex-row items-center gap-3 px-5 pt-4">
           <Pressable
