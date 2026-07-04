@@ -61,24 +61,36 @@ Deno.serve(async (req) => {
     }
 
     // The address must belong to the caller — checked through RLS.
-    const { data: address } = await userClient
-      .from("addresses")
-      .select("id")
-      .eq("id", addressId)
-      .maybeSingle();
-    if (!address) return json({ error: "Dirección no encontrada" }, 400);
-
-    // Recompute all prices from the database.
+    // Both lookups are independent; run them in parallel.
     const admin = createClient(supabaseUrl, serviceKey);
-    const { data: products, error: productsError } = await admin
-      .from("products")
-      .select("id, name, price_cents, stock, is_active")
-      .in("id", productIds);
-    if (productsError) throw productsError;
+    const [addressResult, productsResult] = await Promise.all([
+      userClient
+        .from("addresses")
+        .select("label, street, colonia, city, zip")
+        .eq("id", addressId)
+        .maybeSingle(),
+      admin
+        .from("products")
+        .select("id, name, price_cents, stock, is_active")
+        .in("id", productIds),
+    ]);
+    const address = addressResult.data;
+    if (!address) return json({ error: "Dirección no encontrada" }, 400);
+    if (productsResult.error) throw productsResult.error;
+    const products = productsResult.data;
+
+    const deliveryAddress = [
+      `${address.label}: ${address.street}`,
+      address.colonia,
+      `${address.city} ${address.zip}`.trim(),
+    ]
+      .filter(Boolean)
+      .join(", ");
 
     let subtotalCents = 0;
     const orderItems: {
       product_id: string;
+      name: string;
       quantity: number;
       unit_price_cents: number;
     }[] = [];
@@ -101,6 +113,7 @@ Deno.serve(async (req) => {
       subtotalCents += product.price_cents * item.quantity;
       orderItems.push({
         product_id: product.id,
+        name: product.name,
         quantity: item.quantity,
         unit_price_cents: product.price_cents,
       });
@@ -131,6 +144,7 @@ Deno.serve(async (req) => {
       .insert({
         user_id: user.id,
         address_id: addressId,
+        delivery_address: deliveryAddress,
         status: "pending",
         subtotal_cents: subtotalCents,
         delivery_fee_cents: deliveryFeeCents,

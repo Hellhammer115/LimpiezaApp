@@ -53,7 +53,8 @@ export interface Product {
 export interface Order {
   id: string;
   user_id: string;
-  address_id: string;
+  address_id: string | null;
+  delivery_address: string;
   status: OrderStatus;
   subtotal_cents: number;
   delivery_fee_cents: number;
@@ -69,15 +70,12 @@ export interface OrderItem {
   id: string;
   order_id: string;
   product_id: string;
+  /** Snapshot at purchase time — survives product deactivation. */
+  name: string;
   quantity: number;
   unit_price_cents: number;
 }
 
-export type OrderItemWithProduct = OrderItem & {
-  products: Pick<Product, "name" | "unit" | "image_url"> | null;
-};
-
 export type OrderWithItems = Order & {
-  order_items: OrderItemWithProduct[];
-  addresses: Pick<Address, "label" | "street" | "colonia" | "city"> | null;
+  order_items: OrderItem[];
 };

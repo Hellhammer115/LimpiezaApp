@@ -5,17 +5,23 @@ import { ActivityIndicator, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { isPaymentSettled } from "@/lib/orderStatus";
 import { useOrder } from "@/lib/queries";
 import { useCart } from "@/store/cart";
 
 // The deep link params from Mercado Pago are NEVER trusted to decide the
 // payment outcome — only the order row (updated by the mp-webhook Edge
-// Function) is. This screen just polls it.
+// Function) is. This screen just polls it until the payment settles.
 export default function CheckoutResult() {
   const { order_id: orderId } = useLocalSearchParams<{ order_id: string }>();
   const clearCart = useCart((s) => s.clear);
 
-  const { data: order } = useOrder(orderId, { refetchInterval: 3000 });
+  const { data: order } = useOrder(orderId, {
+    refetchInterval: (query) => {
+      const current = query.state.data;
+      return current && isPaymentSettled(current.status) ? false : 3000;
+    },
+  });
   const status = order?.status;
 
   useEffect(() => {

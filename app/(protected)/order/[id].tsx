@@ -4,14 +4,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { formatDate, formatMXN } from "@/lib/format";
-import { STATUS_LABELS, STATUS_STYLES } from "@/lib/orderStatus";
+import { isFinal, STATUS_LABELS, STATUS_STYLES } from "@/lib/orderStatus";
 import { useOrder } from "@/lib/queries";
 
 export default function OrderDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: order, isLoading } = useOrder(id, {
-    // Keep polling while payment is being confirmed.
-    refetchInterval: 5000,
+    // Poll while the order can still change; stop once delivered/cancelled.
+    refetchInterval: (query) => {
+      const current = query.state.data;
+      return current && isFinal(current.status) ? false : 5000;
+    },
   });
 
   if (isLoading || !order) {
@@ -42,12 +45,9 @@ export default function OrderDetail() {
           <Text className="mt-2 font-quicksand-bold text-dark-100">
             {order.delivery_slot}
           </Text>
-          {order.addresses ? (
-            <Text className="mt-1 font-quicksand-medium text-sm text-dark-100/60">
-              {order.addresses.label} · {order.addresses.street},{" "}
-              {order.addresses.city}
-            </Text>
-          ) : null}
+          <Text className="mt-1 font-quicksand-medium text-sm text-dark-100/60">
+            {order.delivery_address}
+          </Text>
         </View>
 
         <Text className="mb-2 mt-6 font-quicksand-bold text-lg text-dark-100">
@@ -60,7 +60,7 @@ export default function OrderDetail() {
                 numberOfLines={1}
                 className="flex-1 pr-3 font-quicksand-medium text-sm text-dark-100/80"
               >
-                {item.quantity}× {item.products?.name ?? "Producto"}
+                {item.quantity}× {item.name}
               </Text>
               <Text className="font-quicksand-semibold text-sm text-dark-100">
                 {formatMXN(item.unit_price_cents * item.quantity)}

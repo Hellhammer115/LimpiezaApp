@@ -2,6 +2,7 @@
 -- Money is always integer cents (MXN). RLS is enabled on every table.
 
 create extension if not exists "pgcrypto";
+create extension if not exists "pg_trgm";
 
 -- ---------------------------------------------------------------------------
 -- PROFILES (password lives ONLY in auth.users, managed by Supabase Auth)
@@ -122,6 +123,8 @@ create table public.products (
 );
 
 create index products_category_id_idx on public.products (category_id);
+-- Supports the app's substring search (ilike '%…%').
+create index products_name_trgm_idx on public.products using gin (name gin_trgm_ops);
 
 alter table public.products enable row level security;
 
@@ -140,7 +143,10 @@ create type public.order_status as enum
 create table public.orders (
   id                 uuid primary key default gen_random_uuid(),
   user_id            uuid not null references auth.users (id),
-  address_id         uuid not null references public.addresses (id),
+  -- Nullable + set null so users can delete an address after ordering;
+  -- delivery_address keeps the human-readable snapshot for history.
+  address_id         uuid references public.addresses (id) on delete set null,
+  delivery_address   text not null,
   status             public.order_status not null default 'pending',
   subtotal_cents     integer not null check (subtotal_cents >= 0),
   delivery_fee_cents integer not null default 0 check (delivery_fee_cents >= 0),
@@ -169,6 +175,9 @@ create table public.order_items (
   id               uuid primary key default gen_random_uuid(),
   order_id         uuid not null references public.orders (id) on delete cascade,
   product_id       uuid not null references public.products (id),
+  -- Name is snapshotted: the products RLS policy hides deactivated products,
+  -- so order history can't rely on the join to display them.
+  name             text not null,
   quantity         integer not null check (quantity > 0),
   unit_price_cents integer not null check (unit_price_cents >= 0)
 );

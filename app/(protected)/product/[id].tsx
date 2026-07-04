@@ -14,11 +14,9 @@ import { cartCount, useCart } from "@/store/cart";
 export default function ProductScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: product, isLoading } = useProduct(id);
-  const items = useCart((s) => s.items);
+  const inCart = useCart((s) => s.items.some((i) => i.productId === id));
+  const count = useCart((s) => cartCount(s.items));
   const add = useCart((s) => s.add);
-
-  const inCart = items.find((i) => i.productId === id);
-  const count = cartCount(items);
 
   if (isLoading || !product) {
     return (

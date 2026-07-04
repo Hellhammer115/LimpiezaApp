@@ -190,11 +190,7 @@ export function useDeleteAddress() {
   });
 }
 
-const ORDER_WITH_ITEMS = `
-  *,
-  order_items ( *, products ( name, unit, image_url ) ),
-  addresses ( label, street, colonia, city )
-`;
+const ORDER_WITH_ITEMS = `*, order_items ( * )`;
 
 export function useOrders() {
   const { session } = useAuth();
@@ -214,7 +210,14 @@ export function useOrders() {
 
 export function useOrder(
   id: string | undefined,
-  options?: { refetchInterval?: number | false }
+  options?: {
+    refetchInterval?:
+      | number
+      | false
+      | ((query: {
+          state: { data?: OrderWithItems | null };
+        }) => number | false);
+  }
 ) {
   return useQuery({
     queryKey: ["orders", "detail", id],

@@ -9,9 +9,11 @@ import type { Product } from "@/lib/types";
 import { useCart } from "@/store/cart";
 
 export function ProductCard({ product }: { product: Product }) {
-  const items = useCart((s) => s.items);
+  // Boolean selector: only this card re-renders when ITS cart state changes.
+  const inCart = useCart((s) =>
+    s.items.some((i) => i.productId === product.id)
+  );
   const add = useCart((s) => s.add);
-  const inCart = items.find((i) => i.productId === product.id);
   const outOfStock = product.stock <= 0;
 
   return (

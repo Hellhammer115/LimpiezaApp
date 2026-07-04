@@ -1,5 +1,12 @@
 import type { OrderStatus } from "@/lib/types";
 
+/** Payment has been resolved one way or the other (webhook already ran). */
+export const isPaymentSettled = (status: OrderStatus) => status !== "pending";
+
+/** The order can never change again — stop polling. */
+export const isFinal = (status: OrderStatus) =>
+  status === "delivered" || status === "cancelled";
+
 export const STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "Pago pendiente",
   paid: "Pagado",

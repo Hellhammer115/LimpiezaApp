@@ -19,10 +19,9 @@ const ICON_PRIMARY = "#3E8368";
 export default function Home() {
   const { data: categories } = useCategories();
   const { data: featured } = useProducts({ limit: 6 });
-  const items = useCart((s) => s.items);
-
-  const subtotal = cartSubtotalCents(items);
-  const count = cartCount(items);
+  // Primitive selectors so the screen re-renders only when these change.
+  const subtotal = useCart((s) => cartSubtotalCents(s.items));
+  const count = useCart((s) => cartCount(s.items));
   const progress = Math.min(subtotal / FREE_DELIVERY_THRESHOLD_CENTS, 1);
   const remaining = Math.max(FREE_DELIVERY_THRESHOLD_CENTS - subtotal, 0);
 
