@@ -33,6 +33,8 @@ yarn-error.*
 # IDE
 .idea/
 
+expo-dev.log
+
 # local env files (never commit secrets; .env.example is the tracked template)
 .env
 .env.*
