@@ -5,6 +5,12 @@ import {
 } from "@tanstack/react-query";
 
 import { useAuth } from "@/lib/auth";
+import {
+  DEMO_CATEGORIES,
+  DEMO_MODE,
+  DEMO_PRODUCTS,
+  DEMO_PROFILE,
+} from "@/lib/demo";
 import { supabase } from "@/lib/supabase";
 import type {
   Address,
@@ -19,6 +25,7 @@ export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
     queryFn: async (): Promise<Category[]> => {
+      if (DEMO_MODE) return DEMO_CATEGORIES;
       const { data, error } = await supabase
         .from("categories")
         .select("*")
@@ -34,6 +41,7 @@ export function useCategory(id: string | undefined) {
     queryKey: ["categories", id],
     enabled: !!id,
     queryFn: async (): Promise<Category | null> => {
+      if (DEMO_MODE) return DEMO_CATEGORIES.find((c) => c.id === id) ?? null;
       const { data, error } = await supabase
         .from("categories")
         .select("*")
@@ -54,6 +62,15 @@ export function useProducts(options?: {
   return useQuery({
     queryKey: ["products", { categoryId, search, limit }],
     queryFn: async (): Promise<Product[]> => {
+      if (DEMO_MODE) {
+        let result = DEMO_PRODUCTS;
+        if (categoryId) result = result.filter((p) => p.category_id === categoryId);
+        if (search) {
+          const q = search.toLowerCase();
+          result = result.filter((p) => p.name.toLowerCase().includes(q));
+        }
+        return limit ? result.slice(0, limit) : result;
+      }
       let query = supabase
         .from("products")
         .select("*")
@@ -74,6 +91,7 @@ export function useProduct(id: string | undefined) {
     queryKey: ["products", id],
     enabled: !!id,
     queryFn: async (): Promise<Product | null> => {
+      if (DEMO_MODE) return DEMO_PRODUCTS.find((p) => p.id === id) ?? null;
       const { data, error } = await supabase
         .from("products")
         .select("*")
@@ -90,8 +108,9 @@ export function useProfile() {
   const userId = session?.user.id;
   return useQuery({
     queryKey: ["profile", userId],
-    enabled: !!userId,
+    enabled: DEMO_MODE || !!userId,
     queryFn: async (): Promise<Profile | null> => {
+      if (DEMO_MODE) return DEMO_PROFILE;
       const { data, error } = await supabase
         .from("profiles")
         .select("*")

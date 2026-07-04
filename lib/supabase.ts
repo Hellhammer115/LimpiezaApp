@@ -7,6 +7,8 @@ import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 import { AppState } from "react-native";
 
+import { DEMO_MODE } from "@/lib/demo";
+
 // Session tokens are encrypted at rest: the AES-256 key lives in the device
 // Keychain/Keystore (SecureStore has a 2KB value limit, sessions are bigger),
 // the ciphertext lives in AsyncStorage.
@@ -50,12 +52,17 @@ class LargeSecureStore {
   }
 }
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+// In demo mode the client is never actually queried; placeholders keep the
+// module loadable without a .env pointing at a real project.
+const supabaseUrl =
+  process.env.EXPO_PUBLIC_SUPABASE_URL ??
+  (DEMO_MODE ? "https://demo.invalid" : undefined);
+const supabaseAnonKey =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? (DEMO_MODE ? "demo" : undefined);
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
-    "Faltan EXPO_PUBLIC_SUPABASE_URL y/o EXPO_PUBLIC_SUPABASE_ANON_KEY. Copia .env.example a .env y llénalo."
+    "Faltan EXPO_PUBLIC_SUPABASE_URL y/o EXPO_PUBLIC_SUPABASE_ANON_KEY. Copia .env.example a .env y llénalo (o usa EXPO_PUBLIC_DEMO=1 para previsualizar)."
   );
 }
 
