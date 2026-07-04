@@ -5,9 +5,14 @@ import { createClient } from "@supabase/supabase-js";
 import aesjs from "aes-js";
 import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
 
 import { DEMO_MODE } from "@/lib/demo";
+
+// Expo static web output renders this module in Node first (SSR), where
+// there is no window/localStorage — touching storage there crashes the
+// process. Persist sessions only on a real client.
+const isServer = Platform.OS === "web" && typeof window === "undefined";
 
 // Session tokens are encrypted at rest: the AES-256 key lives in the device
 // Keychain/Keystore (SecureStore has a 2KB value limit, sessions are bigger),
@@ -66,20 +71,31 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+// Native: AES-encrypted storage (key in Keychain/Keystore). Browser:
+// AsyncStorage (localStorage) — the standard supabase-js web setup.
+// SSR: no storage at all.
+const sessionStorage = isServer
+  ? undefined
+  : Platform.OS === "web"
+    ? AsyncStorage
+    : new LargeSecureStore();
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: new LargeSecureStore(),
-    autoRefreshToken: true,
-    persistSession: true,
+    storage: sessionStorage,
+    autoRefreshToken: !isServer,
+    persistSession: !isServer,
     detectSessionInUrl: false,
   },
 });
 
 // Refresh tokens only while the app is in the foreground.
-AppState.addEventListener("change", (state) => {
-  if (state === "active") {
-    supabase.auth.startAutoRefresh();
-  } else {
-    supabase.auth.stopAutoRefresh();
-  }
-});
+if (!isServer) {
+  AppState.addEventListener("change", (state) => {
+    if (state === "active") {
+      supabase.auth.startAutoRefresh();
+    } else {
+      supabase.auth.stopAutoRefresh();
+    }
+  });
+}
