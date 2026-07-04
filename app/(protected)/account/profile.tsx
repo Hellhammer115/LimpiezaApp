@@ -6,10 +6,10 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, View } from "react-n
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { FormInput } from "@/components/FormInput";
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { ScreenHeader } from "@/components/ScreenHeader";
-import { useProfile, useUpdateProfile } from "@/lib/queries";
+import { FormInput } from "@/views/FormInput";
+import { PrimaryButton } from "@/views/PrimaryButton";
+import { ScreenHeader } from "@/views/ScreenHeader";
+import { useProfile, useUpdateProfile } from "@/controllers/useProfile";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Ingresa tu nombre"),

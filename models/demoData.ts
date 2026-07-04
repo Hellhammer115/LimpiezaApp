@@ -1,4 +1,5 @@
-import type { Category, Product, Profile } from "@/lib/types";
+// MODEL — demo data: bundled sample catalog for backend-less previews.
+import type { Category, Product, Profile } from "@/models/types";
 
 // Preview-only mode: set EXPO_PUBLIC_DEMO=1 in .env to browse the app with
 // bundled sample data and no backend. Auth and checkout are inert; queries

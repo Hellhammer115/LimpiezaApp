@@ -16,14 +16,27 @@ Aplicación de súper y limpieza a domicilio (estilo Calii) construida con
   firma `x-signature`, consulta el pago a la API de MP y actualiza el pedido
   de forma idempotente. **La app nunca decide si un pago fue exitoso.**
 
+La app sigue una arquitectura **Modelo–Vista–Controlador** (adaptada a
+React Native: expo-router exige que las pantallas vivan en `app/`):
+
 ```
-app/(auth)          sign-in / sign-up
-app/(protected)     tabs (inicio, buscar, pedidos, cuenta), producto,
-                    categoría, carrito, checkout, resultado de pago
-lib/                supabase client (sesión cifrada), queries, pagos
-store/cart.ts       carrito persistido
-supabase/           migraciones SQL, seed, edge functions
+models/             MODELO — acceso a datos y reglas de dominio:
+                    catálogo, pedidos, perfil, direcciones, auth, pagos,
+                    carrito (zustand), datos demo, tipos
+controllers/        CONTROLADOR — hooks que conectan modelos con vistas:
+                    useCatalog, useOrders, useProfile, useAddresses,
+                    useAuth (sesión), useCart, useCheckout (flujo de pago)
+views/              VISTA — componentes reutilizables (ProductCard, etc.)
+app/(auth)          VISTA — pantallas: sign-in / sign-up
+app/(protected)     VISTA — pantallas: tabs, producto, categoría, carrito,
+                    checkout, resultado de pago, pedidos
+services/           infraestructura: cliente de Supabase (sesión cifrada)
+utils/              utilidades puras (formato de moneda/fechas)
+supabase/           migraciones SQL, seed, edge functions (lado servidor)
 ```
+
+Las vistas nunca tocan Supabase directamente: siempre pasan por un
+controlador, que a su vez usa un modelo.
 
 ## Configuración
 

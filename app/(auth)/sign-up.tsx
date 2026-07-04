@@ -6,9 +6,9 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "r
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { FormInput } from "@/components/FormInput";
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { supabase } from "@/lib/supabase";
+import { signUp } from "@/controllers/useAuth";
+import { FormInput } from "@/views/FormInput";
+import { PrimaryButton } from "@/views/PrimaryButton";
 
 const schema = z
   .object({
@@ -33,6 +33,7 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>;
 
+/** VIEW — sign-up screen: validates the form and delegates to the auth controller. */
 export default function SignUp() {
   const [submitting, setSubmitting] = useState(false);
   const { control, handleSubmit } = useForm<FormValues>({
@@ -47,26 +48,26 @@ export default function SignUp() {
     },
   });
 
+  /**
+   * Creates the account through the auth controller. When e-mail
+   * confirmation is enabled the session starts only after the user clicks
+   * the link, so we send them back to sign-in with instructions.
+   */
   const onSubmit = handleSubmit(async ({ name, last_name, phone, email, password }) => {
     setSubmitting(true);
-    // The profile row is created by a database trigger from this metadata;
-    // the password is stored hashed by Supabase Auth, never in our tables.
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name, last_name, phone } },
-    });
-    setSubmitting(false);
-    if (error) {
+    try {
+      const sessionStarted = await signUp({ name, last_name, phone, email, password });
+      if (!sessionStarted) {
+        Alert.alert(
+          "Confirma tu correo",
+          "Te enviamos un enlace de confirmación. Revísalo para activar tu cuenta.",
+          [{ text: "OK", onPress: () => router.replace("/sign-in") }]
+        );
+      }
+    } catch {
       Alert.alert("Error", "No se pudo crear la cuenta. Intenta de nuevo.");
-      return;
-    }
-    if (!data.session) {
-      Alert.alert(
-        "Confirma tu correo",
-        "Te enviamos un enlace de confirmación. Revísalo para activar tu cuenta.",
-        [{ text: "OK", onPress: () => router.replace("/sign-in") }]
-      );
+    } finally {
+      setSubmitting(false);
     }
   });
 

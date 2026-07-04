@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
+/** VIEW — back button + title header for pushed (non-tab) screens. */
 export function ScreenHeader({ title }: { title: string }) {
   return (
     <View className="flex-row items-center gap-3 px-5 pb-3 pt-4">

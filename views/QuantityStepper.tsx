@@ -1,13 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 
-import { useCart } from "@/store/cart";
+import { useCart } from "@/controllers/useCart";
 
 interface Props {
   productId: string;
   compact?: boolean;
 }
 
+/** VIEW — +/− quantity control bound to one cart line. */
 export function QuantityStepper({ productId, compact }: Props) {
   const quantity = useCart(
     (s) => s.items.find((i) => i.productId === productId)?.quantity ?? 0

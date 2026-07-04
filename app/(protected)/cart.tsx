@@ -4,18 +4,19 @@ import { router } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { EmptyState } from "@/components/EmptyState";
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { QuantityStepper } from "@/components/QuantityStepper";
-import { deliveryFeeCents } from "@/lib/delivery";
-import { formatMXN } from "@/lib/format";
-import { cartSubtotalCents, useCart } from "@/store/cart";
+import { EmptyState } from "@/views/EmptyState";
+import { PrimaryButton } from "@/views/PrimaryButton";
+import { QuantityStepper } from "@/views/QuantityStepper";
+import { useCart, useCartSubtotal } from "@/controllers/useCart";
+import { deliveryFeeCents } from "@/models/delivery";
+import { formatMXN } from "@/utils/format";
 
+/** VIEW — cart modal: line items, totals, and the door into checkout. */
 export default function Cart() {
   const items = useCart((s) => s.items);
   const remove = useCart((s) => s.remove);
 
-  const subtotal = cartSubtotalCents(items);
+  const subtotal = useCartSubtotal();
   const deliveryFee = deliveryFeeCents(subtotal);
   const total = subtotal + deliveryFee;
 

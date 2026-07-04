@@ -2,20 +2,17 @@ import { useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ScreenHeader } from "@/components/ScreenHeader";
-import { formatDate, formatMXN } from "@/lib/format";
-import { isFinal, STATUS_LABELS, STATUS_STYLES } from "@/lib/orderStatus";
-import { useOrder } from "@/lib/queries";
+import { useOrder } from "@/controllers/useOrders";
+import { STATUS_LABELS, STATUS_STYLES } from "@/models/orderStatus";
+import { formatDate, formatMXN } from "@/utils/format";
+import { ScreenHeader } from "@/views/ScreenHeader";
 
+/** VIEW — order detail: items, address snapshot, totals, live status. */
 export default function OrderDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: order, isLoading } = useOrder(id, {
-    // Poll while the order can still change; stop once delivered/cancelled.
-    refetchInterval: (query) => {
-      const current = query.state.data;
-      return current && isFinal(current.status) ? false : 5000;
-    },
-  });
+  // The controller polls while the order can still change and stops on
+  // delivered/cancelled.
+  const { data: order, isLoading } = useOrder(id);
 
   if (isLoading || !order) {
     return (

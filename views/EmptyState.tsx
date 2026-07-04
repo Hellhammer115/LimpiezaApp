@@ -10,6 +10,7 @@ interface Props {
   subtitle?: string;
 }
 
+/** VIEW — friendly placeholder for empty lists (no results, empty cart…). */
 export function EmptyState({ icon = "leaf-outline", title, subtitle }: Props) {
   return (
     <View className="flex-1 items-center justify-center px-10 py-16">

@@ -2,11 +2,12 @@ import { router } from "expo-router";
 import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { EmptyState } from "@/components/EmptyState";
-import { formatDate, formatMXN } from "@/lib/format";
-import { STATUS_LABELS, STATUS_STYLES } from "@/lib/orderStatus";
-import { useOrders } from "@/lib/queries";
+import { EmptyState } from "@/views/EmptyState";
+import { formatDate, formatMXN } from "@/utils/format";
+import { STATUS_LABELS, STATUS_STYLES } from "@/models/orderStatus";
+import { useOrders } from "@/controllers/useOrders";
 
+/** VIEW — orders tab: pull-to-refresh order history with status badges. */
 export default function Orders() {
   const { data: orders, isLoading, refetch, isRefetching } = useOrders();
 

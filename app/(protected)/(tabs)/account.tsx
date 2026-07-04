@@ -4,9 +4,8 @@ import type { ComponentProps } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useProfile } from "@/lib/queries";
-import { supabase } from "@/lib/supabase";
-import { useCart } from "@/store/cart";
+import { signOut as authSignOut } from "@/controllers/useAuth";
+import { useProfile } from "@/controllers/useProfile";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -38,20 +37,18 @@ function AccountRow({
   );
 }
 
+/** VIEW — account tab: profile summary and account actions. */
 export default function Account() {
   const { data: profile } = useProfile();
-  const clearCart = useCart((s) => s.clear);
 
+  /** Confirms, then signs out via the auth controller (also clears the cart). */
   const signOut = () => {
     Alert.alert("Cerrar sesión", "¿Seguro que quieres salir?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Salir",
         style: "destructive",
-        onPress: async () => {
-          clearCart();
-          await supabase.auth.signOut();
-        },
+        onPress: () => authSignOut(),
       },
     ]);
   };

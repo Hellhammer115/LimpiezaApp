@@ -4,18 +4,19 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { QuantityStepper } from "@/components/QuantityStepper";
-import { ScreenHeader } from "@/components/ScreenHeader";
-import { formatMXN } from "@/lib/format";
-import { useProduct } from "@/lib/queries";
-import { cartCount, useCart } from "@/store/cart";
+import { PrimaryButton } from "@/views/PrimaryButton";
+import { QuantityStepper } from "@/views/QuantityStepper";
+import { ScreenHeader } from "@/views/ScreenHeader";
+import { useCart, useCartCount, useInCart } from "@/controllers/useCart";
+import { useProduct } from "@/controllers/useCatalog";
+import { formatMXN } from "@/utils/format";
 
+/** VIEW — product detail: image, price, description, add-to-cart bar. */
 export default function ProductScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: product, isLoading } = useProduct(id);
-  const inCart = useCart((s) => s.items.some((i) => i.productId === id));
-  const count = useCart((s) => cartCount(s.items));
+  const inCart = useInCart(id ?? "");
+  const count = useCartCount();
   const add = useCart((s) => s.add);
 
   if (isLoading || !product) {

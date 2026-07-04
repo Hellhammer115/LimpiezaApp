@@ -14,12 +14,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { EmptyState } from "@/components/EmptyState";
-import { FormInput } from "@/components/FormInput";
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { ScreenHeader } from "@/components/ScreenHeader";
-import { useAddresses, useDeleteAddress, useSaveAddress } from "@/lib/queries";
-import type { Address } from "@/lib/types";
+import { EmptyState } from "@/views/EmptyState";
+import { FormInput } from "@/views/FormInput";
+import { PrimaryButton } from "@/views/PrimaryButton";
+import { ScreenHeader } from "@/views/ScreenHeader";
+import {
+  useAddresses,
+  useDeleteAddress,
+  useSaveAddress,
+} from "@/controllers/useAddresses";
+import type { Address } from "@/models/types";
 
 const schema = z.object({
   label: z.string().trim().min(1, "Ej. Casa, Oficina"),

@@ -1,8 +1,12 @@
+// MODEL — cart: client-side cart state, persisted across app restarts.
+// Prices stored here are display-only snapshots taken when the item was
+// added; the create-order Edge Function recomputes everything from the
+// database, so a stale or tampered cart can never change what is charged.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import type { Product } from "@/lib/types";
+import type { Product } from "@/models/types";
 
 export interface CartItem {
   productId: string;
@@ -22,14 +26,16 @@ interface CartState {
   clear: () => void;
 }
 
-// Cart contents are not sensitive, so plain AsyncStorage is fine. Prices here
-// are display-only: the create-order Edge Function recomputes everything from
-// the database, so a stale or tampered cart can never change what is charged.
-export const useCart = create<CartState>()(
+/**
+ * The cart store. Views access it through controllers/useCart — never
+ * directly — so the persistence/shape can evolve without touching views.
+ */
+export const cartStore = create<CartState>()(
   persist(
     (set) => ({
       items: [],
 
+      /** Adds a product, merging quantities when it is already in the cart. */
       add: (product, quantity = 1) =>
         set((state) => {
           const existing = state.items.find((i) => i.productId === product.id);
@@ -57,6 +63,7 @@ export const useCart = create<CartState>()(
           };
         }),
 
+      /** Increases quantity by one. */
       increment: (productId) =>
         set((state) => ({
           items: state.items.map((i) =>
@@ -64,6 +71,7 @@ export const useCart = create<CartState>()(
           ),
         })),
 
+      /** Decreases quantity by one, removing the line when it reaches zero. */
       decrement: (productId) =>
         set((state) => ({
           items: state.items
@@ -73,11 +81,13 @@ export const useCart = create<CartState>()(
             .filter((i) => i.quantity > 0),
         })),
 
+      /** Removes a line entirely regardless of quantity. */
       remove: (productId) =>
         set((state) => ({
           items: state.items.filter((i) => i.productId !== productId),
         })),
 
+      /** Empties the cart (after a paid order, or on sign-out). */
       clear: () => set({ items: [] }),
     }),
     {
@@ -87,8 +97,10 @@ export const useCart = create<CartState>()(
   )
 );
 
+/** Sum of line totals in integer cents. */
 export const cartSubtotalCents = (items: CartItem[]) =>
   items.reduce((sum, i) => sum + i.priceCents * i.quantity, 0);
 
+/** Total number of units across all lines (the cart badge number). */
 export const cartCount = (items: CartItem[]) =>
   items.reduce((sum, i) => sum + i.quantity, 0);

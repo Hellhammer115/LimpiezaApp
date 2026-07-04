@@ -14,6 +14,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH - 40;
 const CARD_GAP = 12;
 
+/** VIEW — swipeable promo banner carousel with page dots (static content). */
 export function PromoCarousel() {
   const [active, setActive] = useState(0);
 

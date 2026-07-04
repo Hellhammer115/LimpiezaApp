@@ -1,4 +1,6 @@
-import type { OrderStatus } from "@/lib/types";
+// MODEL — order-status domain rules: display labels, badge styles, and
+// state predicates shared by every screen that renders an order.
+import type { OrderStatus } from "@/models/types";
 
 /** Payment has been resolved one way or the other (webhook already ran). */
 export const isPaymentSettled = (status: OrderStatus) => status !== "pending";

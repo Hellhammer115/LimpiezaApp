@@ -7,6 +7,7 @@ interface Props {
   disabled?: boolean;
 }
 
+/** VIEW — the app's primary CTA button with loading/disabled states. */
 export function PrimaryButton({ title, onPress, loading, disabled }: Props) {
   const inactive = disabled || loading;
   return (

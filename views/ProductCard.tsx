@@ -3,16 +3,15 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
-import { QuantityStepper } from "@/components/QuantityStepper";
-import { formatMXN } from "@/lib/format";
-import type { Product } from "@/lib/types";
-import { useCart } from "@/store/cart";
+import { useCart, useInCart } from "@/controllers/useCart";
+import type { Product } from "@/models/types";
+import { formatMXN } from "@/utils/format";
+import { QuantityStepper } from "@/views/QuantityStepper";
 
+/** VIEW — product card for grids: image, name, price, add/step controls. */
 export function ProductCard({ product }: { product: Product }) {
   // Boolean selector: only this card re-renders when ITS cart state changes.
-  const inCart = useCart((s) =>
-    s.items.some((i) => i.productId === product.id)
-  );
+  const inCart = useInCart(product.id);
   const add = useCart((s) => s.add);
   const outOfStock = product.stock <= 0;
 

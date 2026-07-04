@@ -1,24 +1,29 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { ScreenHeader } from "@/components/ScreenHeader";
-import { DELIVERY_SLOTS, deliveryFeeCents } from "@/lib/delivery";
-import { formatMXN } from "@/lib/format";
-import { createOrder, openMercadoPagoCheckout } from "@/lib/payments";
-import { useAddresses } from "@/lib/queries";
-import { cartSubtotalCents, useCart } from "@/store/cart";
+import { useAddresses } from "@/controllers/useAddresses";
+import { useCart, useCartSubtotal } from "@/controllers/useCart";
+import { useCheckout } from "@/controllers/useCheckout";
+import { DELIVERY_SLOTS, deliveryFeeCents } from "@/models/delivery";
+import { formatMXN } from "@/utils/format";
+import { PrimaryButton } from "@/views/PrimaryButton";
+import { ScreenHeader } from "@/views/ScreenHeader";
 
+/**
+ * VIEW — checkout: address + delivery-slot pickers and the order summary.
+ * The payment itself is fully handled by the checkout controller; totals
+ * shown here are display-only (the server recomputes and charges).
+ */
 export default function Checkout() {
   const items = useCart((s) => s.items);
   const { data: addresses } = useAddresses();
+  const { pay, paying } = useCheckout();
 
   const [addressId, setAddressId] = useState<string | null>(null);
   const [slot, setSlot] = useState(DELIVERY_SLOTS[0]);
-  const [paying, setPaying] = useState(false);
 
   // Preselect the default (or only) address.
   useEffect(() => {
@@ -28,45 +33,9 @@ export default function Checkout() {
     }
   }, [addresses, addressId]);
 
-  const subtotal = cartSubtotalCents(items);
+  const subtotal = useCartSubtotal();
   const deliveryFee = deliveryFeeCents(subtotal);
   const total = subtotal + deliveryFee;
-
-  const pay = async () => {
-    if (!addressId) {
-      Alert.alert("Falta dirección", "Agrega una dirección de entrega.");
-      return;
-    }
-    if (items.length === 0) {
-      router.back();
-      return;
-    }
-    setPaying(true);
-    try {
-      const { orderId, initPoint } = await createOrder({
-        addressId,
-        deliverySlot: slot,
-        items: items.map((i) => ({
-          productId: i.productId,
-          quantity: i.quantity,
-        })),
-      });
-      // The webhook decides the real payment status; the result screen just
-      // polls the order row. The cart is cleared there once it's paid.
-      await openMercadoPagoCheckout(initPoint);
-      router.replace({
-        pathname: "/checkout/result",
-        params: { order_id: orderId },
-      });
-    } catch (error) {
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "Intenta de nuevo."
-      );
-    } finally {
-      setPaying(false);
-    }
-  };
 
   return (
     <SafeAreaView className="flex-1 bg-mist" edges={["top", "bottom"]}>
@@ -192,7 +161,7 @@ export default function Checkout() {
       <View className="border-t border-dark-100/5 bg-white px-5 pb-4 pt-3">
         <PrimaryButton
           title={`Pagar ${formatMXN(total)} con Mercado Pago`}
-          onPress={pay}
+          onPress={() => pay(addressId, slot)}
           loading={paying}
           disabled={items.length === 0}
         />

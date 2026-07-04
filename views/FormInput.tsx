@@ -12,6 +12,7 @@ interface Props<T extends FieldValues> extends TextInputProps {
   label: string;
 }
 
+/** VIEW — labeled text input bound to react-hook-form, with inline errors. */
 export function FormInput<T extends FieldValues>({
   control,
   name,

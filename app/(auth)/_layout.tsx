@@ -1,8 +1,9 @@
 import { Redirect, Stack } from "expo-router";
 
-import { useAuth } from "@/lib/auth";
-import { DEMO_MODE } from "@/lib/demo";
+import { useAuth } from "@/controllers/useAuth";
+import { DEMO_MODE } from "@/models/demoData";
 
+/** VIEW — auth group guard: reachable only when signed out (and never in demo). */
 export default function AuthLayout() {
   const { session, loading } = useAuth();
 

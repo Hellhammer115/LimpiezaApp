@@ -7,7 +7,7 @@ import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 import { AppState, Platform } from "react-native";
 
-import { DEMO_MODE } from "@/lib/demo";
+import { DEMO_MODE } from "@/models/demoData";
 
 // Expo static web output renders this module in Node first (SSR), where
 // there is no window/localStorage — touching storage there crashes the

@@ -6,9 +6,9 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "r
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { FormInput } from "@/components/FormInput";
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { supabase } from "@/lib/supabase";
+import { signIn } from "@/controllers/useAuth";
+import { FormInput } from "@/views/FormInput";
+import { PrimaryButton } from "@/views/PrimaryButton";
 
 const schema = z.object({
   email: z.string().trim().email("Correo inválido"),
@@ -17,6 +17,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+/** VIEW — sign-in screen: validates the form and delegates to the auth controller. */
 export default function SignIn() {
   const [submitting, setSubmitting] = useState(false);
   const { control, handleSubmit } = useForm<FormValues>({
@@ -24,18 +25,17 @@ export default function SignIn() {
     defaultValues: { email: "", password: "" },
   });
 
+  /** Attempts sign-in; on success the (auth) layout redirects automatically. */
   const onSubmit = handleSubmit(async ({ email, password }) => {
     setSubmitting(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setSubmitting(false);
-    if (error) {
+    try {
+      await signIn(email, password);
+    } catch {
       // Generic message: never reveal whether the email exists.
       Alert.alert("Error", "Correo o contraseña incorrectos.");
+    } finally {
+      setSubmitting(false);
     }
-    // On success the (auth) layout redirects automatically.
   });
 
   return (

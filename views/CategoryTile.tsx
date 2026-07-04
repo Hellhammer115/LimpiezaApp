@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import type { ComponentProps } from "react";
 import { Pressable, Text } from "react-native";
 
-import type { Category } from "@/lib/types";
+import type { Category } from "@/models/types";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -11,6 +11,7 @@ type IconName = ComponentProps<typeof Ionicons>["name"];
 const TILE_COLORS = ["#FF6B4A", "#3E8368", "#2E86AB", "#F2B705", "#10241F"];
 const DARK_TEXT_TILES = new Set(["#F2B705"]);
 
+/** VIEW — colored category shortcut tile used on the home screen. */
 export function CategoryTile({ category }: { category: Category }) {
   const color = TILE_COLORS[category.sort_order % TILE_COLORS.length];
   const textColor = DARK_TEXT_TILES.has(color) ? "#10241F" : "white";

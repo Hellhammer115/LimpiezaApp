@@ -2,11 +2,12 @@ import { useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { EmptyState } from "@/components/EmptyState";
-import { ProductCard } from "@/components/ProductCard";
-import { ScreenHeader } from "@/components/ScreenHeader";
-import { useCategory, useProducts } from "@/lib/queries";
+import { EmptyState } from "@/views/EmptyState";
+import { ProductCard } from "@/views/ProductCard";
+import { ScreenHeader } from "@/views/ScreenHeader";
+import { useCategory, useProducts } from "@/controllers/useCatalog";
 
+/** VIEW — category screen: two-column product grid for one category. */
 export default function CategoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: category } = useCategory(id);
