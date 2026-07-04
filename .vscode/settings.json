@@ -3,5 +3,9 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  }
+  },
+  // Edge Functions are Deno code: let the Deno extension own that folder so
+  // VS Code stops flagging Deno.serve / npm: imports as errors.
+  "deno.enable": true,
+  "deno.enablePaths": ["./supabase/functions"]
 }
