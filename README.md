@@ -1,4 +1,4 @@
-# LimpiezaApp 🧼🥬
+# LimpiezaApp
 
 Aplicación de súper y limpieza a domicilio (estilo Calii) construida con
 **Expo + React Native**, **Supabase** (Postgres, Auth, Edge Functions) y
