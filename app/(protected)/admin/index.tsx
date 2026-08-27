@@ -1,7 +1,7 @@
 // VIEW — admin product list: search, active/inactive badges, create/edit entry points.
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -11,7 +11,17 @@ import { EmptyState } from "@/views/EmptyState";
 
 export default function AdminProducts() {
   const [search, setSearch] = useState("");
-  const { data: products, isLoading } = useAdminProducts(search || undefined);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce the query 300ms behind the keystrokes so we don't hammer the
+  // admin-products Edge Function (it does a sequential per-editor email
+  // lookup) on every character typed.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const { data: products, isLoading } = useAdminProducts(debouncedSearch || undefined);
 
   return (
     <SafeAreaView className="flex-1 bg-mist" edges={["top"]}>

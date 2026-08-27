@@ -43,7 +43,13 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
 
   const [imageUrl, setImageUrl] = useState<string | null>(product?.image_url ?? null);
 
-  const { control, handleSubmit, watch, setValue } = useForm<FormValues>({
+  const {
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { dirtyFields },
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: product?.name ?? "",
@@ -84,21 +90,44 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
   };
 
   const onSubmit = handleSubmit(async (values) => {
-    const input = {
-      category_id: values.category_id,
-      name: values.name,
-      description: values.description,
-      price_cents: Math.round(parseFloat(values.price) * 100),
-      unit: values.unit,
-      image_url: imageUrl,
-      stock: parseInt(values.stock, 10),
-      is_active: values.is_active,
-    };
     try {
       if (product) {
-        await updateProduct.mutateAsync({ id: product.id, patch: input });
+        // Edit mode: only send fields the admin actually changed in this
+        // session. `product` comes from a query cache that can be stale
+        // (e.g. stock decremented by a paid order in the background) —
+        // sending the full snapshot would silently clobber that live value.
+        const patch: Partial<{
+          category_id: string;
+          name: string;
+          description: string;
+          price_cents: number;
+          unit: string;
+          image_url: string | null;
+          stock: number;
+          is_active: boolean;
+        }> = {};
+        if (dirtyFields.name) patch.name = values.name;
+        if (dirtyFields.description) patch.description = values.description;
+        if (dirtyFields.category_id) patch.category_id = values.category_id;
+        if (dirtyFields.price) patch.price_cents = Math.round(parseFloat(values.price) * 100);
+        if (dirtyFields.unit) patch.unit = values.unit;
+        if (dirtyFields.stock) patch.stock = parseInt(values.stock, 10);
+        if (dirtyFields.is_active) patch.is_active = values.is_active;
+        if (imageUrl !== (product.image_url ?? null)) patch.image_url = imageUrl;
+
+        await updateProduct.mutateAsync({ id: product.id, patch });
       } else {
-        await createProduct.mutateAsync(input);
+        // Create mode: no prior server state to clobber, send everything.
+        await createProduct.mutateAsync({
+          category_id: values.category_id,
+          name: values.name,
+          description: values.description,
+          price_cents: Math.round(parseFloat(values.price) * 100),
+          unit: values.unit,
+          image_url: imageUrl,
+          stock: parseInt(values.stock, 10),
+          is_active: values.is_active,
+        });
       }
       router.back();
     } catch {
@@ -114,8 +143,12 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         text: "Eliminar",
         style: "destructive",
         onPress: async () => {
-          await deleteProduct.mutateAsync(product.id);
-          router.back();
+          try {
+            await deleteProduct.mutateAsync(product.id);
+            router.back();
+          } catch {
+            Alert.alert("Error", "No se pudo eliminar el producto.");
+          }
         },
       },
     ]);

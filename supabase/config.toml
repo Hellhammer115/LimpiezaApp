@@ -10,3 +10,6 @@ verify_jwt = true
 
 [functions.mp-webhook]
 verify_jwt = false
+
+[functions.admin-products]
+verify_jwt = true
