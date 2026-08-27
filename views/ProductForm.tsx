@@ -188,7 +188,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
           return (
             <Pressable
               key={c.id}
-              onPress={() => setValue("category_id", c.id, { shouldValidate: true })}
+              onPress={() => setValue("category_id", c.id, { shouldValidate: true, shouldDirty: true })}
               className={active ? "chip-active" : "chip"}
             >
               <Text
@@ -207,7 +207,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
 
       <View className="mb-4 flex-row items-center justify-between rounded-2xl bg-white p-4">
         <Text className="font-quicksand-bold text-dark-100">Activo</Text>
-        <Switch value={isActive} onValueChange={(v) => setValue("is_active", v)} trackColor={{ true: "#3E8368" }} />
+        <Switch value={isActive} onValueChange={(v) => setValue("is_active", v, { shouldDirty: true })} trackColor={{ true: "#3E8368" }} />
       </View>
 
       {product ? (
