@@ -48,6 +48,8 @@ export interface Product {
   stock: number;
   is_active: boolean;
   created_at: string;
+  updated_at: string;
+  updated_by: string | null;
 }
 
 export interface Order {
@@ -79,3 +81,6 @@ export interface OrderItem {
 export type OrderWithItems = Order & {
   order_items: OrderItem[];
 };
+
+/** Product with the editor's email resolved — returned only by admin-products. */
+export type AdminProduct = Product & { updated_by_email: string | null };
