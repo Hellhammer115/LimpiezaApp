@@ -48,3 +48,6 @@ app-example
 # generated native folders
 /ios
 /android
+
+# local git worktrees
+.worktrees/
