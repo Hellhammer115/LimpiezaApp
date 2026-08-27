@@ -5,6 +5,7 @@ import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { signOut as authSignOut } from "@/controllers/useAuth";
+import { useIsAdmin } from "@/controllers/useAdmin";
 import { useProfile } from "@/controllers/useProfile";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
@@ -39,6 +40,7 @@ function AccountRow({
 
 /** VIEW — account tab: profile summary and account actions. */
 export default function Account() {
+  const { data: isAdmin } = useIsAdmin();
   const { data: profile } = useProfile();
 
   /** Confirms, then signs out via the auth controller (also clears the cart). */
@@ -93,6 +95,13 @@ export default function Account() {
             label="Mis pedidos"
             onPress={() => router.push("/orders")}
           />
+          {isAdmin ? (
+            <AccountRow
+              icon="shield-checkmark-outline"
+              label="Admin"
+              onPress={() => router.push("/admin")}
+            />
+          ) : null}
           <AccountRow
             icon="log-out-outline"
             label="Cerrar sesión"
