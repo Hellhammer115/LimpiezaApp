@@ -27,12 +27,21 @@ export default function AdminProducts() {
     <SafeAreaView className="flex-1 bg-mist" edges={["top"]}>
       <View className="flex-row items-center justify-between px-5 pb-3 pt-4">
         <Text className="font-quicksand-bold text-2xl text-dark-100">Productos</Text>
-        <Pressable
-          onPress={() => router.push("/admin/product/new")}
-          className="size-10 items-center justify-center rounded-full bg-primary"
-        >
-          <Ionicons name="add" size={22} color="white" />
-        </Pressable>
+        <View className="flex-row items-center gap-2">
+          <Pressable
+            onPress={() => router.push("/admin/categories")}
+            className="h-10 flex-row items-center gap-1.5 rounded-full bg-white px-3"
+          >
+            <Ionicons name="pricetag-outline" size={16} color="#3E8368" />
+            <Text className="font-quicksand-semibold text-sm text-dark-100">Categorías</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/admin/product/new")}
+            className="size-10 items-center justify-center rounded-full bg-primary"
+          >
+            <Ionicons name="add" size={22} color="white" />
+          </Pressable>
+        </View>
       </View>
 
       <View className="px-5 pb-3">

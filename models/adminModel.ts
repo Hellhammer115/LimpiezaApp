@@ -2,7 +2,7 @@
 // writes go through the admin-products Edge Function (products RLS stays
 // client-read-only). This file is only ever called from admin-gated
 // controllers (see controllers/useAdmin.ts), never in demo mode.
-import type { AdminProduct } from "@/models/types";
+import type { AdminCategory, AdminProduct } from "@/models/types";
 import { supabase } from "@/services/supabase";
 import * as ImageManipulator from "expo-image-manipulator";
 
@@ -17,13 +17,14 @@ export async function checkIsAdmin(userId: string): Promise<boolean> {
   return !!data;
 }
 
-async function invokeAdminProducts<T>(
+async function invokeAdminFunction<T>(
+  fn: "admin-products" | "admin-categories",
   method: "GET" | "POST" | "PATCH" | "DELETE",
   body?: unknown,
   search?: string
 ): Promise<T> {
   const query = search ? `?search=${encodeURIComponent(search)}` : "";
-  const { data, error } = await supabase.functions.invoke(`admin-products${query}`, {
+  const { data, error } = await supabase.functions.invoke(`${fn}${query}`, {
     method,
     body: body as Record<string, unknown> | undefined,
   });
@@ -33,7 +34,7 @@ async function invokeAdminProducts<T>(
 
 /** All products (active + inactive), optionally filtered by name. */
 export async function listAllProducts(search?: string): Promise<AdminProduct[]> {
-  return invokeAdminProducts<AdminProduct[]>("GET", undefined, search);
+  return invokeAdminFunction<AdminProduct[]>("admin-products", "GET", undefined, search);
 }
 
 export interface ProductInput {
@@ -49,7 +50,7 @@ export interface ProductInput {
 
 /** Creates a new product. */
 export async function createProduct(input: ProductInput): Promise<AdminProduct> {
-  return invokeAdminProducts<AdminProduct>("POST", input);
+  return invokeAdminFunction<AdminProduct>("admin-products", "POST", input);
 }
 
 /** Updates a product by id with a partial patch. */
@@ -57,12 +58,42 @@ export async function updateProduct(
   id: string,
   patch: Partial<ProductInput>
 ): Promise<AdminProduct> {
-  return invokeAdminProducts<AdminProduct>("PATCH", { id, ...patch });
+  return invokeAdminFunction<AdminProduct>("admin-products", "PATCH", { id, ...patch });
 }
 
 /** Soft-deletes (deactivates) a product; it can be reactivated by editing it. */
 export async function deleteProduct(id: string): Promise<AdminProduct> {
-  return invokeAdminProducts<AdminProduct>("DELETE", { id });
+  return invokeAdminFunction<AdminProduct>("admin-products", "DELETE", { id });
+}
+
+/** All categories (active + inactive), ordered for display. */
+export async function listAllCategories(): Promise<AdminCategory[]> {
+  return invokeAdminFunction<AdminCategory[]>("admin-categories", "GET");
+}
+
+export interface CategoryInput {
+  name: string;
+  icon: string;
+  sort_order: number;
+  is_active: boolean;
+}
+
+/** Creates a new category. */
+export async function createCategory(input: CategoryInput): Promise<AdminCategory> {
+  return invokeAdminFunction<AdminCategory>("admin-categories", "POST", input);
+}
+
+/** Updates a category by id with a partial patch. */
+export async function updateCategory(
+  id: string,
+  patch: Partial<CategoryInput>
+): Promise<AdminCategory> {
+  return invokeAdminFunction<AdminCategory>("admin-categories", "PATCH", { id, ...patch });
+}
+
+/** Soft-deletes (deactivates) a category; it can be reactivated by editing it. */
+export async function deleteCategory(id: string): Promise<AdminCategory> {
+  return invokeAdminFunction<AdminCategory>("admin-categories", "DELETE", { id });
 }
 
 /**

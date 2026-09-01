@@ -6,11 +6,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/controllers/useAuth";
 import {
   checkIsAdmin,
+  createCategory,
   createProduct,
+  deleteCategory,
   deleteProduct,
+  listAllCategories,
   listAllProducts,
+  updateCategory,
   updateProduct,
   uploadProductImage,
+  type CategoryInput,
   type ProductInput,
 } from "@/models/adminModel";
 import { DEMO_MODE } from "@/models/demoData";
@@ -72,5 +77,47 @@ export function useUploadProductImage() {
   return useMutation({
     mutationFn: ({ uri, width, height }: { uri: string; width: number; height: number }) =>
       uploadProductImage(uri, width, height),
+  });
+}
+
+/** All categories (active + inactive), for the admin list screen. */
+export function useAdminCategories() {
+  return useQuery({
+    queryKey: ["admin-categories"],
+    queryFn: () => listAllCategories(),
+  });
+}
+
+/** Shared invalidation: admin screens AND the shopper-facing catalog both refresh. */
+function useInvalidateCategories() {
+  const queryClient = useQueryClient();
+  return () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+    queryClient.invalidateQueries({ queryKey: ["categories"] });
+  };
+}
+
+export function useCreateCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: (input: CategoryInput) => createCategory(input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: Partial<CategoryInput> }) =>
+      updateCategory(id, patch),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteCategory() {
+  const invalidate = useInvalidateCategories();
+  return useMutation({
+    mutationFn: (id: string) => deleteCategory(id),
+    onSuccess: invalidate,
   });
 }
