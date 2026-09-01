@@ -25,7 +25,7 @@ export function ProductCard({ product }: { product: Product }) {
           <Image
             source={{ uri: product.image_url }}
             style={{ width: "100%", height: "100%", borderRadius: 12 }}
-            contentFit="cover"
+            contentFit="contain"
             transition={150}
           />
         ) : (

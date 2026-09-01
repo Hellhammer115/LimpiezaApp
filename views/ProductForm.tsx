@@ -166,7 +166,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
           <Image
             source={{ uri: imageUrl }}
             style={{ width: "100%", height: "100%" }}
-            contentFit="cover"
+            contentFit="contain"
           />
         ) : (
           <View className="items-center">
