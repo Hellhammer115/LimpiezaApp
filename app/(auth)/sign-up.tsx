@@ -6,7 +6,7 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "r
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { signUp } from "@/controllers/useAuth";
+import { SignUpError, signUp } from "@/controllers/useAuth";
 import { FormInput } from "@/views/FormInput";
 import { PrimaryButton } from "@/views/PrimaryButton";
 
@@ -36,7 +36,7 @@ type FormValues = z.infer<typeof schema>;
 /** VIEW — sign-up screen: validates the form and delegates to the auth controller. */
 export default function SignUp() {
   const [submitting, setSubmitting] = useState(false);
-  const { control, handleSubmit } = useForm<FormValues>({
+  const { control, handleSubmit, setError } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: "",
@@ -52,6 +52,9 @@ export default function SignUp() {
    * Creates the account through the auth controller. When e-mail
    * confirmation is enabled the session starts only after the user clicks
    * the link, so we send them back to sign-in with instructions.
+   *
+   * A taken e-mail or phone becomes an inline error on that field —
+   * an Alert would leave the user guessing which one collided.
    */
   const onSubmit = handleSubmit(async ({ name, last_name, phone, email, password }) => {
     setSubmitting(true);
@@ -64,8 +67,14 @@ export default function SignUp() {
           [{ text: "OK", onPress: () => router.replace("/sign-in") }]
         );
       }
-    } catch {
-      Alert.alert("Error", "No se pudo crear la cuenta. Intenta de nuevo.");
+    } catch (error) {
+      if (error instanceof SignUpError && error.reason === "email_taken") {
+        setError("email", { message: "Ese correo ya tiene una cuenta" });
+      } else if (error instanceof SignUpError && error.reason === "phone_taken") {
+        setError("phone", { message: "Ese teléfono ya está registrado" });
+      } else {
+        Alert.alert("Error", "No se pudo crear la cuenta. Intenta de nuevo.");
+      }
     } finally {
       setSubmitting(false);
     }

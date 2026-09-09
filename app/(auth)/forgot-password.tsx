@@ -1,38 +1,40 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "expo-router";
+import { router } from "expo-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { signIn } from "@/controllers/useAuth";
+import { requestPasswordReset } from "@/controllers/useAuth";
 import { FormInput } from "@/views/FormInput";
 import { PrimaryButton } from "@/views/PrimaryButton";
 
 const schema = z.object({
   email: z.string().trim().email("Correo inválido"),
-  password: z.string().min(1, "Ingresa tu contraseña"),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-/** VIEW — sign-in screen: validates the form and delegates to the auth controller. */
-export default function SignIn() {
+/** VIEW — step 1 of password recovery: request a code by e-mail. */
+export default function ForgotPassword() {
   const [submitting, setSubmitting] = useState(false);
   const { control, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "" },
   });
 
-  /** Attempts sign-in; on success the (auth) layout redirects automatically. */
-  const onSubmit = handleSubmit(async ({ email, password }) => {
+  /**
+   * Always advances to the code screen, even when no account matches the
+   * address — saying so would let anyone probe which e-mails are registered.
+   */
+  const onSubmit = handleSubmit(async ({ email }) => {
     setSubmitting(true);
     try {
-      await signIn(email, password);
+      await requestPasswordReset(email);
+      router.push(`/reset-password?email=${encodeURIComponent(email)}`);
     } catch {
-      // Generic message: never reveal whether the email exists.
-      Alert.alert("Error", "Correo o contraseña incorrectos.");
+      Alert.alert("Error", "No se pudo enviar el código. Intenta de nuevo.");
     } finally {
       setSubmitting(false);
     }
@@ -49,10 +51,10 @@ export default function SignIn() {
           keyboardShouldPersistTaps="handled"
         >
           <Text className="font-quicksand-bold text-3xl text-dark-100">
-            Hola de nuevo 👋
+            ¿Olvidaste tu contraseña?
           </Text>
           <Text className="mb-8 mt-1 font-quicksand-medium text-base text-dark-100/60">
-            Inicia sesión para hacer tu pedido
+            Te enviaremos un código de 6 dígitos para restablecerla
           </Text>
 
           <FormInput
@@ -64,40 +66,22 @@ export default function SignIn() {
             autoCapitalize="none"
             autoComplete="email"
           />
-          <FormInput
-            control={control}
-            name="password"
-            label="Contraseña"
-            placeholder="Tu contraseña"
-            secureTextEntry
-            autoComplete="password"
-          />
-
-          <View className="-mt-2 mb-2 flex-row justify-end">
-            <Link href="/forgot-password" asChild>
-              <Text className="font-quicksand-semibold text-sm text-primary">
-                ¿Olvidaste tu contraseña?
-              </Text>
-            </Link>
-          </View>
 
           <View className="mt-4">
             <PrimaryButton
-              title="Iniciar sesión"
+              title="Enviar código"
               onPress={onSubmit}
               loading={submitting}
             />
           </View>
 
-          <View className="mt-6 flex-row justify-center gap-1">
-            <Text className="font-quicksand-medium text-dark-100/60">
-              ¿No tienes cuenta?
+          <View className="mt-6 flex-row justify-center">
+            <Text
+              onPress={() => router.back()}
+              className="font-quicksand-bold text-primary"
+            >
+              Volver a iniciar sesión
             </Text>
-            <Link href="/sign-up" asChild>
-              <Text className="font-quicksand-bold text-primary">
-                Crea una
-              </Text>
-            </Link>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
