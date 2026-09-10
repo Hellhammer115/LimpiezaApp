@@ -14,12 +14,14 @@ const C = {
   bebidas: "c0000000-0000-4000-8000-000000000005",
 };
 
+const demoCategoryDefaults = { is_active: true, updated_at: new Date().toISOString(), updated_by: null };
+
 export const DEMO_CATEGORIES: Category[] = [
-  { id: C.ofertas, name: "Ofertas", icon: "flash-outline", sort_order: 0 },
-  { id: C.frutas, name: "Frutas y verduras", icon: "leaf-outline", sort_order: 1 },
-  { id: C.limpieza, name: "Limpieza del hogar", icon: "sparkles-outline", sort_order: 2 },
-  { id: C.lacteos, name: "Lácteos y huevo", icon: "nutrition-outline", sort_order: 3 },
-  { id: C.bebidas, name: "Bebidas", icon: "water-outline", sort_order: 4 },
+  { id: C.ofertas, name: "Ofertas", icon: "flash-outline", sort_order: 0, ...demoCategoryDefaults },
+  { id: C.frutas, name: "Frutas y verduras", icon: "leaf-outline", sort_order: 1, ...demoCategoryDefaults },
+  { id: C.limpieza, name: "Limpieza del hogar", icon: "sparkles-outline", sort_order: 2, ...demoCategoryDefaults },
+  { id: C.lacteos, name: "Lácteos y huevo", icon: "nutrition-outline", sort_order: 3, ...demoCategoryDefaults },
+  { id: C.bebidas, name: "Bebidas", icon: "water-outline", sort_order: 4, ...demoCategoryDefaults },
 ];
 
 function product(
@@ -42,6 +44,8 @@ function product(
     stock,
     is_active: true,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    updated_by: null,
   };
 }
 

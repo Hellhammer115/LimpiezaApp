@@ -40,7 +40,13 @@
       "expo-web-browser",
       "expo-secure-store",
       "expo-image",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite acceso a tus fotos para elegir la imagen de un producto."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

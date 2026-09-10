@@ -54,7 +54,7 @@ export default function Cart() {
                     <Image
                       source={{ uri: item.imageUrl }}
                       style={{ width: "100%", height: "100%", borderRadius: 12 }}
-                      contentFit="cover"
+                      contentFit="contain"
                     />
                   ) : (
                     <Ionicons name="basket-outline" size={24} color="#3E8368" />

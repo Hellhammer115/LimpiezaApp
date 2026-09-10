@@ -38,7 +38,7 @@ export default function ProductScreen() {
             <Image
               source={{ uri: product.image_url }}
               style={{ width: "100%", height: "100%", borderRadius: 24 }}
-              contentFit="cover"
+              contentFit="contain"
               transition={200}
             />
           ) : (

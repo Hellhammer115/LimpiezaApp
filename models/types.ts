@@ -35,6 +35,9 @@ export interface Category {
   name: string;
   icon: string;
   sort_order: number;
+  is_active: boolean;
+  updated_at: string;
+  updated_by: string | null;
 }
 
 export interface Product {
@@ -48,6 +51,8 @@ export interface Product {
   stock: number;
   is_active: boolean;
   created_at: string;
+  updated_at: string;
+  updated_by: string | null;
 }
 
 export interface Order {
@@ -79,3 +84,9 @@ export interface OrderItem {
 export type OrderWithItems = Order & {
   order_items: OrderItem[];
 };
+
+/** Product with the editor's email resolved — returned only by admin-products. */
+export type AdminProduct = Product & { updated_by_email: string | null };
+
+/** Category with the editor's email resolved — returned only by admin-categories. */
+export type AdminCategory = Category & { updated_by_email: string | null };

@@ -51,3 +51,6 @@ app-example
 
 # local git worktrees
 .worktrees/
+
+# Supabase CLI local link state (project ref, cached versions)
+supabase/.temp/

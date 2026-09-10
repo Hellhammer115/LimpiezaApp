@@ -59,6 +59,15 @@ export const signIn = authModel.signIn;
 /** Creates an account; returns false when e-mail confirmation is pending. */
 export const signUp = authModel.signUp;
 
+/** Sign-up rejection carrying the offending field; re-exported for views. */
+export const SignUpError = authModel.SignUpError;
+
+/** Emails a 6-digit recovery code (silent about whether the account exists). */
+export const requestPasswordReset = authModel.requestPasswordReset;
+
+/** Verifies a recovery code and sets the new password in one step. */
+export const resetPassword = authModel.resetPassword;
+
 /** Signs out and clears the local cart (it belongs to the leaving user). */
 export async function signOut(): Promise<void> {
   cartStore.getState().clear();
