@@ -54,7 +54,7 @@ export default function ForgotPassword() {
             ¿Olvidaste tu contraseña?
           </Text>
           <Text className="mb-8 mt-1 font-quicksand-medium text-base text-dark-100/60">
-            Te enviaremos un código por correo para restablecerla
+            Te enviaremos un código de 6 dígitos para restablecerla
           </Text>
 
           <FormInput
