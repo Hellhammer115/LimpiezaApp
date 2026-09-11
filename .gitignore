@@ -40,6 +40,9 @@ expo-dev.log
 .env.*
 !.env.example
 
+# local MCP server config — may carry access tokens
+.mcp.json
+
 # typescript
 *.tsbuildinfo
 
