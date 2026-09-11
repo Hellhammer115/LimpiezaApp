@@ -12,10 +12,13 @@ import { PrimaryButton } from "@/views/PrimaryButton";
 
 const schema = z
   .object({
+    // The code length is a Supabase setting (Auth → Email OTP Length), not a
+    // constant — this project currently issues 8 digits. Accept GoTrue's whole
+    // configurable range so changing that setting can't break the screen.
     code: z
       .string()
       .trim()
-      .regex(/^\d{6}$/, "Código de 6 dígitos"),
+      .regex(/^\d{6,10}$/, "Ingresa el código que recibiste"),
     password: z
       .string()
       .min(8, "Mínimo 8 caracteres")
@@ -92,9 +95,9 @@ export default function ResetPassword() {
             control={control}
             name="code"
             label="Código de verificación"
-            placeholder="123456"
+            placeholder="12345678"
             keyboardType="number-pad"
-            maxLength={6}
+            maxLength={10}
             autoComplete="one-time-code"
           />
           <FormInput
