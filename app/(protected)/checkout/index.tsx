@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -22,16 +22,20 @@ export default function Checkout() {
   const { data: addresses } = useAddresses();
   const { pay, paying } = useCheckout();
 
-  const [addressId, setAddressId] = useState<string | null>(null);
+  // Only an explicit tap is stored; the effective selection is derived below.
+  // Preselecting in an effect instead would commit one frame with nothing
+  // selected and force a second render every time the query refetches.
+  const [chosenId, setChosenId] = useState<string | null>(null);
   const [slot, setSlot] = useState(DELIVERY_SLOTS[0]);
 
-  // Preselect the default (or only) address.
-  useEffect(() => {
-    if (!addressId && addresses && addresses.length > 0) {
-      const preferred = addresses.find((a) => a.is_default) ?? addresses[0];
-      setAddressId(preferred.id);
-    }
-  }, [addresses, addressId]);
+  const preferredId =
+    addresses?.find((a) => a.is_default)?.id ?? addresses?.[0]?.id ?? null;
+  // Falls back to the preferred address both before the user picks one and
+  // when their pick has since been deleted — otherwise a stale id would leave
+  // nothing selected and still be handed to pay().
+  const addressId = addresses?.some((a) => a.id === chosenId)
+    ? chosenId
+    : preferredId;
 
   const subtotal = useCartSubtotal();
   const deliveryFee = deliveryFeeCents(subtotal);
@@ -50,7 +54,7 @@ export default function Checkout() {
           return (
             <Pressable
               key={address.id}
-              onPress={() => setAddressId(address.id)}
+              onPress={() => setChosenId(address.id)}
               className={`mb-2 flex-row items-center rounded-2xl border bg-white p-4 ${
                 selected ? "border-primary" : "border-transparent"
               }`}
