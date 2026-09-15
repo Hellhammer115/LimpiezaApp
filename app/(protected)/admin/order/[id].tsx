@@ -70,10 +70,15 @@ function Loaded({ order }: { order: OrderWithItems }) {
 
   const onDraftChange = (d: QuoteDraft) => setEdits(d);
 
+  // Throws on failure so sendQuote never sends unsaved edits.
+  const saveEdits = async () => {
+    await update.mutateAsync({ id: order.id, input: draftToInput(draft) });
+    setEdits(null);
+  };
+
   const save = async () => {
     try {
-      await update.mutateAsync({ id: order.id, input: draftToInput(draft) });
-      setEdits(null);
+      await saveEdits();
     } catch {
       // The mutation hook already alerted.
     }
@@ -81,7 +86,7 @@ function Loaded({ order }: { order: OrderWithItems }) {
 
   const sendQuote = async () => {
     try {
-      if (dirty) await save();
+      if (dirty) await saveEdits();
       await send.mutateAsync(order.id);
       Alert.alert("Cotización enviada", "El cliente ya puede verla y pagarla.");
     } catch {
