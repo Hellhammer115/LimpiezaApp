@@ -47,7 +47,9 @@ export interface Totals {
 /**
  * The money rule, identical to apply_quote_edit in the database:
  * total = subtotal − discount + delivery fee, never below zero.
- * Used for live totals in the admin editor; the server result is authoritative.
+ * An amount discount larger than the subtotal is NOT clamped here — the server
+ * rejects it, and the editor caps the input. Used for live totals in the admin
+ * editor; the server result is authoritative.
  */
 export function computeTotals(input: {
   items: { quantity: number; unit_price_cents: number }[];
@@ -61,7 +63,7 @@ export function computeTotals(input: {
   const discount =
     input.discount.type === "percent"
       ? Math.round((subtotal * input.discount.value) / 100)
-      : Math.min(input.discount.cents, subtotal);
+      : input.discount.cents;
   const total = Math.max(subtotal - discount + input.deliveryFeeCents, 0);
   return { subtotal, discount, deliveryFee: input.deliveryFeeCents, total };
 }

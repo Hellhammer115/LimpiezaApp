@@ -23,6 +23,7 @@ export function formatDate(iso: string): string {
  * integer cents. Returns null when the text isn't a non-negative amount.
  */
 export function parseMXNInput(text: string): number | null {
+  if (text.includes("-")) return null;
   const cleaned = text.replace(/[^0-9.,]/g, "").replace(/,/g, "");
   if (cleaned === "" || cleaned === ".") return null;
   const value = Number(cleaned);
