@@ -71,13 +71,20 @@ export function QuoteEditor({ draft, onChange }: Props) {
   });
   const subtotal = totals.subtotal;
 
+  // Every item change goes through here so an amount discount is re-capped
+  // to the new subtotal: apply_quote_edit rejects a discount larger than it.
+  const withItems = (items: QuoteDraft["items"]): QuoteDraft => {
+    const nextSubtotal = items.reduce((sum, i) => sum + i.quantity * i.unit_price_cents, 0);
+    const discount: DiscountInput =
+      draft.discount.type === "amount"
+        ? { type: "amount", cents: Math.min(draft.discount.cents, nextSubtotal) }
+        : draft.discount;
+    return { ...draft, items, discount };
+  };
   const updateItem = (id: string, patch: Partial<QuoteDraft["items"][number]>) =>
-    onChange({
-      ...draft,
-      items: draft.items.map((i) => (i.id === id ? { ...i, ...patch } : i)),
-    });
+    onChange(withItems(draft.items.map((i) => (i.id === id ? { ...i, ...patch } : i))));
   const removeItem = (id: string) =>
-    onChange({ ...draft, items: draft.items.filter((i) => i.id !== id) });
+    onChange(withItems(draft.items.filter((i) => i.id !== id)));
 
   return (
     <View>
