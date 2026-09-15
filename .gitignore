@@ -57,3 +57,6 @@ app-example
 
 # Supabase CLI local link state (project ref, cached versions)
 supabase/.temp/
+
+# subagent-driven-development scratch (ledger, briefs, review packages)
+.superpowers/
