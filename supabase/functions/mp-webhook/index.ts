@@ -2,7 +2,7 @@
 // Deployed with verify_jwt = false (Mercado Pago calls it server-to-server);
 // it authenticates requests by validating the x-signature HMAC and never
 // trusts the notification body — it re-fetches the payment from MP's API.
-// Idempotent: repeated notifications cannot double-fulfill an order.
+// Idempotent: repeated notifications cannot double-fulfill an order. A failed payment returns the row to quote_sent (never cancelled).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const encoder = new TextEncoder();
@@ -105,10 +105,17 @@ Deno.serve(async (req) => {
     // Idempotency: only a pending order can transition.
     if (order.status !== "pending") return new Response(null, { status: 200 });
 
+    const now = new Date().toISOString();
     if (payment.status === "approved") {
+      // paid_at is what turns a cotización into a pedido — set only here.
       const { data: updated } = await admin
         .from("orders")
-        .update({ status: "paid", mp_payment_id: String(payment.id) })
+        .update({
+          status: "paid",
+          paid_at: now,
+          updated_at: now,
+          mp_payment_id: String(payment.id),
+        })
         .eq("id", orderId)
         .eq("status", "pending") // guard against concurrent notifications
         .select("id");
@@ -116,9 +123,17 @@ Deno.serve(async (req) => {
         await admin.rpc("decrement_stock_for_order", { p_order_id: orderId });
       }
     } else if (["rejected", "cancelled"].includes(payment.status)) {
+      // The quote survives a failed payment: back to quote_sent so the
+      // customer can retry, with the stale preference cleared.
       await admin
         .from("orders")
-        .update({ status: "cancelled", mp_payment_id: String(payment.id) })
+        .update({
+          status: "quote_sent",
+          mp_payment_id: String(payment.id),
+          mp_preference_id: null,
+          mp_init_point: null,
+          updated_at: now,
+        })
         .eq("id", orderId)
         .eq("status", "pending");
     }
