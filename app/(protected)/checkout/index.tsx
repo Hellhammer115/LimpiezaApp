@@ -9,18 +9,20 @@ import { useCart, useCartSubtotal } from "@/controllers/useCart";
 import { useCheckout } from "@/controllers/useCheckout";
 import { DELIVERY_SLOTS, deliveryFeeCents } from "@/models/delivery";
 import { formatMXN } from "@/utils/format";
+import { OrderTotals } from "@/views/OrderTotals";
 import { PrimaryButton } from "@/views/PrimaryButton";
 import { ScreenHeader } from "@/views/ScreenHeader";
 
 /**
  * VIEW — checkout: address + delivery-slot pickers and the order summary.
- * The payment itself is fully handled by the checkout controller; totals
- * shown here are display-only (the server recomputes and charges).
+ * The request itself is fully handled by the checkout controller; totals
+ * shown here are estimates (the server recomputes and the admin may adjust
+ * them).
  */
 export default function Checkout() {
   const items = useCart((s) => s.items);
   const { data: addresses } = useAddresses();
-  const { pay, paying } = useCheckout();
+  const { requestQuote, submitting } = useCheckout();
 
   // Only an explicit tap is stored; the effective selection is derived below.
   // Preselecting in an effect instead would commit one frame with nothing
@@ -43,7 +45,7 @@ export default function Checkout() {
 
   return (
     <SafeAreaView className="flex-1 bg-mist" edges={["top", "bottom"]}>
-      <ScreenHeader title="Confirmar pedido" />
+      <ScreenHeader title="Solicitar cotización" />
       <ScrollView contentContainerClassName="px-5 pb-6">
         {/* Address */}
         <Text className="mb-2 mt-2 font-quicksand-bold text-lg text-dark-100">
@@ -131,42 +133,20 @@ export default function Checkout() {
               </Text>
             </View>
           ))}
-          <View className="mt-2 border-t border-dark-100/5 pt-2">
-            <View className="flex-row justify-between">
-              <Text className="font-quicksand-medium text-dark-100/60">
-                Subtotal
-              </Text>
-              <Text className="font-quicksand-semibold text-dark-100">
-                {formatMXN(subtotal)}
-              </Text>
-            </View>
-            <View className="mt-1 flex-row justify-between">
-              <Text className="font-quicksand-medium text-dark-100/60">
-                Envío
-              </Text>
-              <Text className="font-quicksand-semibold text-dark-100">
-                {deliveryFee === 0 ? "Gratis" : formatMXN(deliveryFee)}
-              </Text>
-            </View>
-            <View className="mt-1 flex-row justify-between">
-              <Text className="font-quicksand-bold text-dark-100">Total</Text>
-              <Text className="font-quicksand-bold text-dark-100">
-                {formatMXN(total)}
-              </Text>
-            </View>
-          </View>
+          <OrderTotals subtotal={subtotal} discount={0} deliveryFee={deliveryFee} total={total} />
         </View>
 
         <Text className="mt-3 text-center font-quicksand-medium text-xs text-dark-100/50">
-          El total se calcula y cobra de forma segura en el servidor.
+          Un asesor confirmará precios y disponibilidad. Te avisaremos cuando tu
+          cotización esté lista para pagar; el envío mostrado es estimado.
         </Text>
       </ScrollView>
 
       <View className="border-t border-dark-100/5 bg-white px-5 pb-4 pt-3">
         <PrimaryButton
-          title={`Pagar ${formatMXN(total)} con Mercado Pago`}
-          onPress={() => pay(addressId, slot)}
-          loading={paying}
+          title={`Solicitar cotización · ${formatMXN(total)}`}
+          onPress={() => requestQuote(addressId, slot)}
+          loading={submitting}
           disabled={items.length === 0}
         />
       </View>
