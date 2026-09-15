@@ -1,25 +1,22 @@
-// CONTROLLER — checkout: orchestrates the payment flow. The view only
-// calls pay(); this controller builds the request from the cart model,
-// asks the server to create the order (prices recomputed there), opens
-// the Mercado Pago in-app browser, and navigates to the result screen —
-// which polls the order row because the webhook, not the browser redirect,
-// decides the real payment outcome.
+// CONTROLLER — checkout: turns the cart into a cotización. The view only
+// calls requestQuote(); this controller builds the request from the cart
+// model, asks the server to create the quote (prices recomputed there),
+// clears the cart and navigates to the result screen, which shows the
+// "cotización enviada" state for a quote_requested row.
 import { router } from "expo-router";
 import { useState } from "react";
 import { Alert } from "react-native";
 
 import { useCart } from "@/controllers/useCart";
-import {
-  createOrder,
-  openMercadoPagoCheckout,
-} from "@/models/paymentModel";
+import { requestQuote as requestQuoteModel } from "@/models/quoteModel";
 
 export function useCheckout() {
   const items = useCart((s) => s.items);
-  const [paying, setPaying] = useState(false);
+  const clearCart = useCart((s) => s.clear);
+  const [submitting, setSubmitting] = useState(false);
 
-  /** Starts the Mercado Pago payment for the current cart. */
-  const pay = async (addressId: string | null, deliverySlot: string) => {
+  /** Sends the current cart as a cotización. */
+  const requestQuote = async (addressId: string | null, deliverySlot: string) => {
     if (!addressId) {
       Alert.alert("Falta dirección", "Agrega una dirección de entrega.");
       return;
@@ -28,32 +25,22 @@ export function useCheckout() {
       router.back();
       return;
     }
-    setPaying(true);
+    setSubmitting(true);
     try {
-      const { orderId, initPoint } = await createOrder({
+      const { orderId } = await requestQuoteModel({
         addressId,
         deliverySlot,
-        items: items.map((i) => ({
-          productId: i.productId,
-          quantity: i.quantity,
-        })),
+        items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
       });
-      // The cart is intentionally NOT cleared here — the result screen
-      // clears it only once the order is actually paid.
-      await openMercadoPagoCheckout(initPoint);
-      router.replace({
-        pathname: "/checkout/result",
-        params: { order_id: orderId },
-      });
+      // The quote now lives in Pedidos → Cotizaciones; the cart is done.
+      clearCart();
+      router.replace({ pathname: "/checkout/result", params: { order_id: orderId } });
     } catch (error) {
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "Intenta de nuevo."
-      );
+      Alert.alert("Error", error instanceof Error ? error.message : "Intenta de nuevo.");
     } finally {
-      setPaying(false);
+      setSubmitting(false);
     }
   };
 
-  return { pay, paying };
+  return { requestQuote, submitting };
 }

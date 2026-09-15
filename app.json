@@ -46,7 +46,8 @@
         {
           "photosPermission": "Permite acceso a tus fotos para elegir la imagen de un producto."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,
