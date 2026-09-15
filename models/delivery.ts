@@ -1,5 +1,5 @@
-// Display-only values. The create-order Edge Function recomputes the fee
-// server-side (supabase/functions/create-order) — keep both in sync.
+// Display-only values. The authoritative rule lives in
+// supabase/functions/_shared/delivery.ts (used by create-quote) — keep both in sync.
 export const FREE_DELIVERY_THRESHOLD_CENTS = 35000;
 export const DELIVERY_FEE_CENTS = 3900;
 
