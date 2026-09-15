@@ -1,18 +1,21 @@
 import { useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useOrder } from "@/controllers/useOrders";
-import { STATUS_LABELS, STATUS_STYLES } from "@/models/orderStatus";
+import { useCancelQuote, usePayQuote } from "@/controllers/useQuote";
+import { canCancelQuote, canPay, isQuote, STATUS_LABELS, STATUS_STYLES } from "@/models/orderStatus";
 import { formatDate, formatMXN } from "@/utils/format";
+import { OrderTotals } from "@/views/OrderTotals";
+import { PrimaryButton } from "@/views/PrimaryButton";
 import { ScreenHeader } from "@/views/ScreenHeader";
 
-/** VIEW — order detail: items, address snapshot, totals, live status. */
+/** VIEW — customer order/cotización detail: items, address, totals, live status, pay/cancel. */
 export default function OrderDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  // The controller polls while the order can still change and stops on
-  // delivered/cancelled.
   const { data: order, isLoading } = useOrder(id);
+  const pay = usePayQuote();
+  const cancel = useCancelQuote();
 
   if (isLoading || !order) {
     return (
@@ -23,10 +26,17 @@ export default function OrderDetail() {
   }
 
   const [badgeBg, badgeText] = STATUS_STYLES[order.status];
+  const kindLabel = isQuote(order) ? "Cotización" : "Pedido";
+
+  const confirmCancel = () =>
+    Alert.alert("Cancelar cotización", "¿Seguro que quieres cancelarla?", [
+      { text: "No", style: "cancel" },
+      { text: "Sí, cancelar", style: "destructive", onPress: () => cancel.mutate(order.id) },
+    ]);
 
   return (
-    <SafeAreaView className="flex-1 bg-mist" edges={["top"]}>
-      <ScreenHeader title={`Pedido #${order.id.slice(0, 8)}`} />
+    <SafeAreaView className="flex-1 bg-mist" edges={["top", "bottom"]}>
+      <ScreenHeader title={`${kindLabel} #${order.id.slice(0, 8)}`} />
       <ScrollView contentContainerClassName="px-5 pb-8">
         <View className="rounded-2xl bg-white p-4">
           <View className="flex-row items-center justify-between">
@@ -39,24 +49,30 @@ export default function OrderDetail() {
               </Text>
             </View>
           </View>
-          <Text className="mt-2 font-quicksand-bold text-dark-100">
-            {order.delivery_slot}
-          </Text>
+          <Text className="mt-2 font-quicksand-bold text-dark-100">{order.delivery_slot}</Text>
           <Text className="mt-1 font-quicksand-medium text-sm text-dark-100/60">
             {order.delivery_address}
           </Text>
         </View>
 
-        <Text className="mb-2 mt-6 font-quicksand-bold text-lg text-dark-100">
-          Productos
-        </Text>
+        {order.status === "quote_requested" ? (
+          <Text className="mt-3 px-1 font-quicksand-medium text-sm text-dark-100/60">
+            Un asesor está revisando tu cotización. Te avisaremos cuando esté lista para pagar.
+          </Text>
+        ) : null}
+
+        {order.admin_note ? (
+          <View className="mt-4 rounded-2xl bg-foam p-4">
+            <Text className="font-quicksand-bold text-sm text-primary">Nota del asesor</Text>
+            <Text className="mt-1 font-quicksand-medium text-sm text-dark-100">{order.admin_note}</Text>
+          </View>
+        ) : null}
+
+        <Text className="mb-2 mt-6 font-quicksand-bold text-lg text-dark-100">Productos</Text>
         <View className="rounded-2xl bg-white p-4">
           {order.order_items.map((item) => (
             <View key={item.id} className="mb-2 flex-row justify-between">
-              <Text
-                numberOfLines={1}
-                className="flex-1 pr-3 font-quicksand-medium text-sm text-dark-100/80"
-              >
+              <Text numberOfLines={1} className="flex-1 pr-3 font-quicksand-medium text-sm text-dark-100/80">
                 {item.quantity}× {item.name}
               </Text>
               <Text className="font-quicksand-semibold text-sm text-dark-100">
@@ -64,36 +80,34 @@ export default function OrderDetail() {
               </Text>
             </View>
           ))}
-          <View className="mt-2 border-t border-dark-100/5 pt-2">
-            <View className="flex-row justify-between">
-              <Text className="font-quicksand-medium text-dark-100/60">
-                Subtotal
-              </Text>
-              <Text className="font-quicksand-semibold text-dark-100">
-                {formatMXN(order.subtotal_cents)}
-              </Text>
-            </View>
-            <View className="mt-1 flex-row justify-between">
-              <Text className="font-quicksand-medium text-dark-100/60">
-                Envío
-              </Text>
-              <Text className="font-quicksand-semibold text-dark-100">
-                {order.delivery_fee_cents === 0
-                  ? "Gratis"
-                  : formatMXN(order.delivery_fee_cents)}
-              </Text>
-            </View>
-            <View className="mt-1 flex-row justify-between">
-              <Text className="font-quicksand-bold text-base text-dark-100">
-                Total
-              </Text>
-              <Text className="font-quicksand-bold text-base text-dark-100">
-                {formatMXN(order.total_cents)}
-              </Text>
-            </View>
-          </View>
+          <OrderTotals
+            subtotal={order.subtotal_cents}
+            discount={order.discount_cents}
+            discountPercent={order.discount_percent}
+            deliveryFee={order.delivery_fee_cents}
+            total={order.total_cents}
+          />
         </View>
       </ScrollView>
+
+      {canPay(order.status) || canCancelQuote(order.status) ? (
+        <View className="gap-2 border-t border-dark-100/5 bg-white px-5 pb-4 pt-3">
+          {canPay(order.status) ? (
+            <PrimaryButton
+              title={`Pagar ${formatMXN(order.total_cents)} con Mercado Pago`}
+              onPress={() => pay.mutate(order.id)}
+              loading={pay.isPending}
+            />
+          ) : null}
+          {canCancelQuote(order.status) ? (
+            <Pressable onPress={confirmCancel} disabled={cancel.isPending} className="items-center py-2">
+              <Text className="font-quicksand-bold text-sm text-coral">
+                {cancel.isPending ? "Cancelando…" : "Cancelar cotización"}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }
