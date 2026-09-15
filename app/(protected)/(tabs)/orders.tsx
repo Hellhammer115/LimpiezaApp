@@ -80,8 +80,7 @@ function OrdersScreen({
               order={item}
               showCustomer={admin}
               onPress={() =>
-                // Cast until Task 15 adds the admin route (typed routes regenerate on next expo start).
-                router.push((admin ? `/admin/order/${item.id}` : `/order/${item.id}`) as never)
+                router.push(admin ? `/admin/order/${item.id}` : `/order/${item.id}`)
               }
             />
           )}
