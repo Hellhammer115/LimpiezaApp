@@ -2,6 +2,7 @@
 // writes go through the admin-products Edge Function (products RLS stays
 // client-read-only). This file is only ever called from admin-gated
 // controllers (see controllers/useAdmin.ts), never in demo mode.
+import { functionErrorMessage } from "@/models/functionError";
 import type { AdminCategory, AdminProduct } from "@/models/types";
 import { supabase } from "@/services/supabase";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -17,24 +18,32 @@ export async function checkIsAdmin(userId: string): Promise<boolean> {
   return !!data;
 }
 
-async function invokeAdminFunction<T>(
-  fn: "admin-products" | "admin-categories",
+export async function invokeAdminFunction<T>(
+  fn: "admin-products" | "admin-categories" | "admin-orders",
   method: "GET" | "POST" | "PATCH" | "DELETE",
   body?: unknown,
-  search?: string
+  query?: Record<string, string | undefined>
 ): Promise<T> {
-  const query = search ? `?search=${encodeURIComponent(search)}` : "";
-  const { data, error } = await supabase.functions.invoke(`${fn}${query}`, {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query ?? {})) {
+    if (value) params.set(key, value);
+  }
+  const suffix = params.size > 0 ? `?${params.toString()}` : "";
+  const { data, error } = await supabase.functions.invoke(`${fn}${suffix}`, {
     method,
     body: body as Record<string, unknown> | undefined,
   });
-  if (error) throw new Error("No se pudo completar la operación. Intenta de nuevo.");
+  if (error) {
+    throw new Error(
+      await functionErrorMessage(error, "No se pudo completar la operación. Intenta de nuevo.")
+    );
+  }
   return data as T;
 }
 
 /** All products (active + inactive), optionally filtered by name. */
 export async function listAllProducts(search?: string): Promise<AdminProduct[]> {
-  return invokeAdminFunction<AdminProduct[]>("admin-products", "GET", undefined, search);
+  return invokeAdminFunction<AdminProduct[]>("admin-products", "GET", undefined, { search });
 }
 
 export interface ProductInput {
