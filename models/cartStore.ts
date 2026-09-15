@@ -1,6 +1,6 @@
 // MODEL — cart: client-side cart state, persisted across app restarts.
 // Prices stored here are display-only snapshots taken when the item was
-// added; the create-order Edge Function recomputes everything from the
+// added; the create-quote Edge Function recomputes everything from the
 // database, so a stale or tampered cart can never change what is charged.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";

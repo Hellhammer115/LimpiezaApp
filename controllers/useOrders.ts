@@ -16,7 +16,7 @@ export function useOrders(kind: OrderKind, enabled = true) {
   return useQuery({
     queryKey: ["orders", session?.user.id],
     enabled: !!session && enabled,
-    queryFn: fetchOrders,
+    queryFn: () => fetchOrders(session!.user.id),
     select: (orders) => orders.filter((o) => (kind === "quotes" ? isQuote(o) : !isQuote(o))),
   });
 }

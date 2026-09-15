@@ -71,8 +71,12 @@ function Loaded({ order }: { order: OrderWithItems }) {
   const onDraftChange = (d: QuoteDraft) => setEdits(d);
 
   const save = async () => {
-    await update.mutateAsync({ id: order.id, input: draftToInput(draft) });
-    setEdits(null);
+    try {
+      await update.mutateAsync({ id: order.id, input: draftToInput(draft) });
+      setEdits(null);
+    } catch {
+      // The mutation hook already alerted.
+    }
   };
 
   const sendQuote = async () => {

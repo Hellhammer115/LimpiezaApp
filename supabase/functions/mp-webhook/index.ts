@@ -97,16 +97,34 @@ Deno.serve(async (req) => {
 
     const { data: order } = await admin
       .from("orders")
-      .select("id, status")
+      .select("id, status, total_cents")
       .eq("id", orderId)
       .maybeSingle();
     if (!order) return new Response(null, { status: 200 });
 
     // Idempotency: only a pending order can transition.
-    if (order.status !== "pending") return new Response(null, { status: 200 });
+    if (order.status !== "pending") {
+      console.error("Payment notification for non-pending order", {
+        orderId,
+        status: order.status,
+        paymentId: payment.id,
+        paymentStatus: payment.status,
+      });
+      return new Response(null, { status: 200 });
+    }
 
     const now = new Date().toISOString();
     if (payment.status === "approved") {
+      const paidCents = Math.round(Number(payment.transaction_amount) * 100);
+      if (paidCents !== order.total_cents) {
+        console.error("Payment amount mismatch", {
+          orderId,
+          paidCents,
+          expected: order.total_cents,
+          paymentId: payment.id,
+        });
+        return new Response(null, { status: 200 });
+      }
       // paid_at is what turns a cotización into a pedido — set only here.
       const { data: updated } = await admin
         .from("orders")
