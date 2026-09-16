@@ -46,9 +46,12 @@ export default function AdminHome() {
         ) : null}
       </View>
 
+      {/* flex-grow-0: a ScrollView defaults to flexGrow 1 and would share the
+          screen height with the panel below instead of hugging the chips. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        className="flex-grow-0"
         contentContainerClassName="px-5 pb-3"
       >
         {SECTIONS.map((s) => {
