@@ -43,7 +43,7 @@ export default function OrderDetail() {
     ]);
 
   const confirmDelete = () =>
-    Alert.alert("Eliminar cotización", "Esta acción no se puede deshacer.", [
+    Alert.alert("Eliminar cotización", "Se quitará de tu lista de cotizaciones.", [
       { text: "No", style: "cancel" },
       { text: "Eliminar", style: "destructive", onPress: () => remove.mutate(order.id) },
     ]);

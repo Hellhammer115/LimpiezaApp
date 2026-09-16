@@ -120,7 +120,10 @@ function Loaded({ order }: { order: OrderWithItems }) {
   };
 
   const confirmDelete = () =>
-    Alert.alert("Eliminar cotización", "Esta acción no se puede deshacer.", [
+    Alert.alert(
+      "Eliminar cotización",
+      "Se quitará de la lista de administración; el cliente la seguirá viendo.",
+      [
       { text: "No", style: "cancel" },
       { text: "Eliminar", style: "destructive", onPress: () => remove.mutate(order.id) },
     ]);

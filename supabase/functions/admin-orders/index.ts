@@ -73,6 +73,7 @@ Deno.serve(async (req) => {
       let query = admin
         .from("orders")
         .select(ORDER_WITH_ITEMS)
+        .is("hidden_by_admin_at", null)
         .order("created_at", { ascending: false });
       query = kind === "orders" ? query.not("paid_at", "is", null) : query.is("paid_at", null);
       if (search) {
@@ -163,17 +164,23 @@ Deno.serve(async (req) => {
       }
 
       if (body.action === "delete") {
-        // Only a cancelled, never-paid quote can be removed; order_items cascade.
-        const { data: deleted, error } = await admin
+        // "Delete" hides the row from the admin list only; the customer keeps
+        // seeing it until they hide it too, at which point the row is removed.
+        const { data: hidden, error } = await admin
           .from("orders")
-          .delete()
+          .update({ hidden_by_admin_at: now })
           .eq("id", body.id)
           .eq("status", "cancelled")
           .is("paid_at", null)
-          .select("id");
+          .select("id, hidden_by_customer_at");
         if (error) throw error;
-        if (!deleted || deleted.length === 0) {
+        const row = hidden?.[0];
+        if (!row) {
           return json({ error: "Solo se pueden eliminar cotizaciones canceladas" }, 409);
+        }
+        if (row.hidden_by_customer_at) {
+          // Both sides hid it: physically remove (order_items cascade).
+          await admin.from("orders").delete().eq("id", body.id);
         }
         return json({ ok: true });
       }

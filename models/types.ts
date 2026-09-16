@@ -88,6 +88,10 @@ export interface Order {
   quoted_by: string | null;
   mp_preference_id: string | null;
   mp_init_point: string | null;
+  /** Set when the customer "deleted" this cancelled quote from their list. */
+  hidden_by_customer_at: string | null;
+  /** Set when an admin "deleted" this cancelled quote from the admin list. */
+  hidden_by_admin_at: string | null;
   mp_payment_id: string | null;
   created_at: string;
   updated_at: string;

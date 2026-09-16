@@ -6,12 +6,13 @@
 import type { Order, OrderWithItems } from "@/models/types";
 import { supabase } from "@/services/supabase";
 
-/** Returns the given user's own orders, newest first. */
+/** Returns the given user's own orders (minus the ones they "deleted"), newest first. */
 export async function fetchOrders(userId: string): Promise<Order[]> {
   const { data, error } = await supabase
     .from("orders")
     .select("*")
     .eq("user_id", userId)
+    .is("hidden_by_customer_at", null)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data;
