@@ -6,10 +6,16 @@
 import { z } from "npm:zod@3";
 
 import { getCaller, requireAdmin } from "../_shared/auth.ts";
+import { deliveryFeeCents } from "../_shared/delivery.ts";
 import { escapeHtml, sendEmail } from "../_shared/email.ts";
 import { json } from "../_shared/http.ts";
 
 const ORDER_WITH_ITEMS = "*, order_items ( * )";
+
+const discountSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("amount"), cents: z.number().int().min(0) }),
+  z.object({ type: z.literal("percent"), value: z.number().int().min(0).max(100) }),
+]);
 
 const patchSchema = z.object({
   id: z.string().uuid(),
@@ -24,14 +30,31 @@ const patchSchema = z.object({
     .min(1)
     .max(50),
   delivery_fee_cents: z.number().int().min(0),
-  discount: z.discriminatedUnion("type", [
-    z.object({ type: z.literal("amount"), cents: z.number().int().min(0) }),
-    z.object({ type: z.literal("percent"), value: z.number().int().min(0).max(100) }),
-  ]),
+  discount: discountSchema,
+  admin_note: z.string().max(1000).nullable(),
+});
+
+const createSchema = z.object({
+  id: z.string().uuid().optional(), // unused; keeps the discriminated union shape uniform
+  action: z.literal("create"),
+  userId: z.string().uuid(),
+  items: z
+    .array(
+      z.object({
+        productId: z.string().uuid(),
+        quantity: z.number().int().min(1).max(99),
+        unit_price_cents: z.number().int().min(0),
+      })
+    )
+    .min(1)
+    .max(50),
+  delivery_fee_cents: z.number().int().min(0),
+  discount: discountSchema,
   admin_note: z.string().max(1000).nullable(),
 });
 
 const actionSchema = z.discriminatedUnion("action", [
+  createSchema,
   z.object({ id: z.string().uuid(), action: z.literal("send") }),
   z.object({ id: z.string().uuid(), action: z.literal("reject"), note: z.string().max(1000).optional() }),
   z.object({ id: z.string().uuid(), action: z.literal("delete") }),
@@ -114,6 +137,120 @@ Deno.serve(async (req) => {
       if (!parsed.success) return json({ error: "Solicitud inválida" }, 400);
       const body = parsed.data;
       const now = new Date().toISOString();
+
+      if (body.action === "create") {
+        const productIds = body.items.map((i) => i.productId);
+        if (new Set(productIds).size !== productIds.length) {
+          return json({ error: "Producto repetido en la cotización" }, 409);
+        }
+        const [profileResult, productsResult] = await Promise.all([
+          admin
+            .from("profiles")
+            .select("user_id, name, last_name, phone, email")
+            .eq("user_id", body.userId)
+            .maybeSingle(),
+          admin
+            .from("products")
+            .select("id, name, price_cents, stock, is_active")
+            .in("id", productIds),
+        ]);
+        const profile = profileResult.data;
+        if (!profile) return json({ error: "Cliente no encontrado" }, 404);
+        if (productsResult.error) throw productsResult.error;
+
+        let subtotalCents = 0;
+        const rows: {
+          product_id: string;
+          name: string;
+          quantity: number;
+          unit_price_cents: number;
+          catalog_price_cents: number;
+        }[] = [];
+        for (const item of body.items) {
+          const product = productsResult.data?.find((p) => p.id === item.productId);
+          if (!product || !product.is_active) {
+            return json({ error: "Un producto ya no está disponible" }, 409);
+          }
+          if (product.stock < item.quantity) {
+            return json({ error: `Sin existencias: ${product.name}` }, 409);
+          }
+          subtotalCents += product.price_cents * item.quantity;
+          rows.push({
+            product_id: product.id,
+            name: product.name,
+            quantity: item.quantity,
+            unit_price_cents: product.price_cents,
+            catalog_price_cents: product.price_cents,
+          });
+        }
+        const feeCents = deliveryFeeCents(subtotalCents);
+        const customerName = [profile.name, profile.last_name].filter(Boolean).join(" ").trim();
+
+        const { data: order, error: orderError } = await admin
+          .from("orders")
+          .insert({
+            user_id: body.userId,
+            address_id: null,
+            delivery_address: "",
+            delivery_slot: "",
+            status: "quote_sent",
+            quoted_at: now,
+            quoted_by: user.id,
+            created_by_admin: user.id,
+            subtotal_cents: subtotalCents,
+            discount_cents: 0,
+            delivery_fee_cents: feeCents,
+            total_cents: subtotalCents + feeCents,
+            customer_name: customerName,
+            customer_phone: profile.phone ?? null,
+            customer_email: profile.email ?? "",
+          })
+          .select("id")
+          .single();
+        if (orderError) throw orderError;
+
+        const { data: inserted, error: itemsError } = await admin
+          .from("order_items")
+          .insert(rows.map((r) => ({ ...r, order_id: order.id })))
+          .select("id, product_id");
+        if (itemsError || !inserted) {
+          await admin.from("orders").delete().eq("id", order.id);
+          throw itemsError ?? new Error("order_items insert returned nothing");
+        }
+
+        // The admin's prices/fee/discount/note go through the same atomic
+        // totals RPC the editor uses.
+        const byProduct = new Map(body.items.map((i) => [i.productId, i]));
+        const { error: editError } = await admin.rpc("apply_quote_edit", {
+          p_order_id: order.id,
+          p_items: inserted.map((row) => ({
+            id: row.id,
+            quantity: byProduct.get(row.product_id)!.quantity,
+            unit_price_cents: byProduct.get(row.product_id)!.unit_price_cents,
+          })),
+          p_delivery_fee_cents: body.delivery_fee_cents,
+          p_discount_cents: body.discount.type === "amount" ? body.discount.cents : 0,
+          p_discount_percent: body.discount.type === "percent" ? body.discount.value : null,
+          p_admin_note: body.admin_note,
+        });
+        if (editError) {
+          await admin.from("orders").delete().eq("id", order.id);
+          if (editError.code === "P0001" || editError.code === "P0002") {
+            return json({ error: editError.message }, 409);
+          }
+          throw editError;
+        }
+
+        if (profile.email) {
+          await sendEmail({
+            to: [profile.email],
+            subject: `Recibiste una cotización de LimpiezaApp (#${order.id.slice(0, 8)})`,
+            html: `<p>Hola ${escapeHtml(customerName || "")},</p>
+<p>Te enviamos una cotización. Ábrela en LimpiezaApp (Pedidos → Cotizaciones) para aceptarla, elegir tu dirección y pagarla, o rechazarla.</p>`,
+          });
+        }
+        return json(await fetchOrder(order.id));
+      }
 
       if (body.action === "send") {
         const { data: updated, error } = await admin
