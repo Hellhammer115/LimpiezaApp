@@ -45,3 +45,17 @@ export async function deleteQuote(orderId: string): Promise<void> {
     );
   }
 }
+
+/** Accepts an admin-created quote by choosing the delivery address and slot. */
+export async function acceptQuote(
+  orderId: string,
+  addressId: string,
+  deliverySlot: string
+): Promise<void> {
+  const { error } = await supabase.functions.invoke("quote-actions", {
+    body: { action: "accept", orderId, addressId, deliverySlot },
+  });
+  if (error) {
+    throw new Error(await functionErrorMessage(error, "No se pudo aceptar la cotización."));
+  }
+}

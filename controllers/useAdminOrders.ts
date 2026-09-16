@@ -6,13 +6,21 @@ import { Alert } from "react-native";
 
 import {
   advanceOrder,
+  createQuoteForCustomer,
+  lookupCustomers,
   deleteQuote,
   listAdminOrders,
   rejectQuote,
   sendQuote,
   updateQuote,
 } from "@/models/adminOrderModel";
-import type { FulfillmentStatus, OrderKind, QuoteEditInput } from "@/models/types";
+import { useCart } from "@/controllers/useCart";
+import type {
+  AdminCreateQuoteInput,
+  FulfillmentStatus,
+  OrderKind,
+  QuoteEditInput,
+} from "@/models/types";
 
 /** All rows of one kind, newest first. `enabled` = false for non-admin mounts. */
 export function useAdminOrders(kind: OrderKind, search?: string, enabled = true) {
@@ -78,5 +86,30 @@ export function useAdminDeleteQuote() {
       router.back();
     },
     onError: (error) => Alert.alert("No se eliminó", error.message),
+  });
+}
+
+/** Customers matching an email/phone fragment; disabled under 3 characters. */
+export function useCustomerLookup(q: string) {
+  const trimmed = q.trim();
+  return useQuery({
+    queryKey: ["admin-users", trimmed],
+    queryFn: () => lookupCustomers(trimmed),
+    enabled: trimmed.length >= 3,
+  });
+}
+
+/** Sends a quote to a customer, clears the cart and opens the admin detail. */
+export function useCreateQuoteForCustomer() {
+  const invalidate = useInvalidateAllOrders();
+  const clearCart = useCart((s) => s.clear);
+  return useMutation({
+    mutationFn: (input: AdminCreateQuoteInput) => createQuoteForCustomer(input),
+    onSuccess: (order) => {
+      clearCart();
+      invalidate();
+      router.replace(`/admin/order/${order.id}`);
+    },
+    onError: (error) => Alert.alert("No se envió", error.message),
   });
 }

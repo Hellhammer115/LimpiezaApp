@@ -3,6 +3,8 @@
 // (orders RLS stays client-read-only). Only used from admin-gated controllers.
 import { invokeAdminFunction } from "@/models/adminModel";
 import type {
+  AdminCreateQuoteInput,
+  CustomerMatch,
   FulfillmentStatus,
   OrderKind,
   OrderWithItems,
@@ -54,4 +56,19 @@ export async function advanceOrder(
 /** Permanently removes a cancelled, never-paid quote (any customer's). */
 export async function deleteQuote(id: string): Promise<void> {
   await invokeAdminFunction<{ ok: true }>("admin-orders", "POST", { id, action: "delete" });
+}
+
+/** Registered customers whose email or phone contains `q` (admin only). */
+export async function lookupCustomers(q: string): Promise<CustomerMatch[]> {
+  return invokeAdminFunction<CustomerMatch[]>("admin-users", "GET", undefined, { q });
+}
+
+/** Creates and sends a cotización to a customer with the admin's prices. */
+export async function createQuoteForCustomer(
+  input: AdminCreateQuoteInput
+): Promise<OrderWithItems> {
+  return invokeAdminFunction<OrderWithItems>("admin-orders", "POST", {
+    action: "create",
+    ...input,
+  });
 }

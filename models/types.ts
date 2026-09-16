@@ -92,6 +92,8 @@ export interface Order {
   hidden_by_customer_at: string | null;
   /** Set when an admin "deleted" this cancelled quote from the admin list. */
   hidden_by_admin_at: string | null;
+  /** Admin who sent this quote; null for customer-requested ones. */
+  created_by_admin: string | null;
   mp_payment_id: string | null;
   created_at: string;
   updated_at: string;
@@ -131,3 +133,21 @@ export type AdminProduct = Product & { updated_by_email: string | null };
 
 /** Category with the editor's email resolved — returned only by admin-categories. */
 export type AdminCategory = Category & { updated_by_email: string | null };
+
+/** A registered customer as returned by the admin-users lookup. */
+export interface CustomerMatch {
+  user_id: string;
+  name: string;
+  last_name: string;
+  email: string;
+  phone: string | null;
+}
+
+/** Body of admin-orders `create` (mirrors its zod schema). */
+export interface AdminCreateQuoteInput {
+  userId: string;
+  items: { productId: string; quantity: number; unit_price_cents: number }[];
+  delivery_fee_cents: number;
+  discount: DiscountInput;
+  admin_note: string | null;
+}

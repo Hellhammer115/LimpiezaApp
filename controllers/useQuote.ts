@@ -6,7 +6,7 @@ import { router } from "expo-router";
 import { Alert } from "react-native";
 
 import { openMercadoPagoCheckout, payQuote } from "@/models/paymentModel";
-import { cancelQuote, deleteQuote } from "@/models/quoteModel";
+import { acceptQuote, cancelQuote, deleteQuote } from "@/models/quoteModel";
 
 function useInvalidateOrders() {
   const queryClient = useQueryClient();
@@ -46,6 +46,24 @@ export function useDeleteQuote() {
       invalidate();
       router.replace("/orders");
     },
+    onError: (error) => Alert.alert("Error", error.message),
+  });
+}
+
+/** Records the customer's address/slot on an admin-created quote. */
+export function useAcceptQuote() {
+  const invalidate = useInvalidateOrders();
+  return useMutation({
+    mutationFn: ({
+      orderId,
+      addressId,
+      deliverySlot,
+    }: {
+      orderId: string;
+      addressId: string;
+      deliverySlot: string;
+    }) => acceptQuote(orderId, addressId, deliverySlot),
+    onSuccess: invalidate,
     onError: (error) => Alert.alert("Error", error.message),
   });
 }

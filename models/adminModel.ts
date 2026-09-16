@@ -19,7 +19,7 @@ export async function checkIsAdmin(userId: string): Promise<boolean> {
 }
 
 export async function invokeAdminFunction<T>(
-  fn: "admin-products" | "admin-categories" | "admin-orders",
+  fn: "admin-products" | "admin-categories" | "admin-orders" | "admin-users",
   method: "GET" | "POST" | "PATCH" | "DELETE",
   body?: unknown,
   query?: Record<string, string | undefined>

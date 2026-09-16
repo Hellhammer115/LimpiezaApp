@@ -100,3 +100,11 @@ export const FULFILLMENT_LABELS: Record<FulfillmentStatus, string> = {
 /** A cancelled, never-paid quote can be removed by its owner or an admin. */
 export const canDeleteQuote = (order: Pick<Order, "status" | "paid_at">) =>
   order.status === "cancelled" && order.paid_at === null;
+
+/** Sent by an admin (as opposed to requested by the customer). */
+export const isAdminQuote = (order: Pick<Order, "created_by_admin">) =>
+  order.created_by_admin !== null;
+
+/** Admin-created and the customer has not chosen address/slot yet. */
+export const needsAcceptance = (order: Pick<Order, "created_by_admin" | "address_id">) =>
+  order.created_by_admin !== null && order.address_id === null;
