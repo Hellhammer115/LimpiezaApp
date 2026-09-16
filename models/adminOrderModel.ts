@@ -50,3 +50,8 @@ export async function advanceOrder(
     to,
   });
 }
+
+/** Permanently removes a cancelled, never-paid quote (any customer's). */
+export async function deleteQuote(id: string): Promise<void> {
+  await invokeAdminFunction<{ ok: true }>("admin-orders", "POST", { id, action: "delete" });
+}

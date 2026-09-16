@@ -34,6 +34,7 @@ const patchSchema = z.object({
 const actionSchema = z.discriminatedUnion("action", [
   z.object({ id: z.string().uuid(), action: z.literal("send") }),
   z.object({ id: z.string().uuid(), action: z.literal("reject"), note: z.string().max(1000).optional() }),
+  z.object({ id: z.string().uuid(), action: z.literal("delete") }),
   z.object({
     id: z.string().uuid(),
     action: z.literal("advance"),
@@ -159,6 +160,22 @@ Deno.serve(async (req) => {
           return json({ error: "La cotización ya no se puede rechazar" }, 409);
         }
         return json(await fetchOrder(body.id));
+      }
+
+      if (body.action === "delete") {
+        // Only a cancelled, never-paid quote can be removed; order_items cascade.
+        const { data: deleted, error } = await admin
+          .from("orders")
+          .delete()
+          .eq("id", body.id)
+          .eq("status", "cancelled")
+          .is("paid_at", null)
+          .select("id");
+        if (error) throw error;
+        if (!deleted || deleted.length === 0) {
+          return json({ error: "Solo se pueden eliminar cotizaciones canceladas" }, 409);
+        }
+        return json({ ok: true });
       }
 
       // advance: only the single next step, guarded by the current status.

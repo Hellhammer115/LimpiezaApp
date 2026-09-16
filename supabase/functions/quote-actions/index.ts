@@ -1,8 +1,9 @@
-// quote-actions: the customer's two actions on their own cotización.
+// quote-actions: the customer's actions on their own cotización.
 //   pay    — creates the Mercado Pago preference for the QUOTED total (single
 //            line item: MP rejects negative discount lines) and moves the row
 //            to `pending`; the webhook decides the outcome.
 //   cancel — cancels an unpaid quote.
+//   delete — removes a cancelled, never-paid quote.
 // Ownership is enforced by reading the order through the RLS-scoped client.
 // Deployed with verify_jwt = true.
 import { z } from "npm:zod@3";
@@ -11,7 +12,7 @@ import { getCaller } from "../_shared/auth.ts";
 import { json } from "../_shared/http.ts";
 
 const bodySchema = z.object({
-  action: z.enum(["pay", "cancel"]),
+  action: z.enum(["pay", "cancel", "delete"]),
   orderId: z.string().uuid(),
 });
 
@@ -46,6 +47,22 @@ Deno.serve(async (req) => {
       if (error) throw error;
       if (!updated || updated.length === 0) {
         return json({ error: "La cotización ya no se puede cancelar" }, 409);
+      }
+      return json({ ok: true });
+    }
+
+    if (action === "delete") {
+      // Only a cancelled, never-paid quote can be removed; order_items cascade.
+      const { data: deleted, error } = await admin
+        .from("orders")
+        .delete()
+        .eq("id", orderId)
+        .eq("status", "cancelled")
+        .is("paid_at", null)
+        .select("id");
+      if (error) throw error;
+      if (!deleted || deleted.length === 0) {
+        return json({ error: "Solo se pueden eliminar cotizaciones canceladas" }, 409);
       }
       return json({ ok: true });
     }

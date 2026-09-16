@@ -3,8 +3,15 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "rea
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useOrder } from "@/controllers/useOrders";
-import { useCancelQuote, usePayQuote } from "@/controllers/useQuote";
-import { canCancelQuote, canPay, isQuote, STATUS_LABELS, STATUS_STYLES } from "@/models/orderStatus";
+import { useCancelQuote, useDeleteQuote, usePayQuote } from "@/controllers/useQuote";
+import {
+  canCancelQuote,
+  canDeleteQuote,
+  canPay,
+  isQuote,
+  STATUS_LABELS,
+  STATUS_STYLES,
+} from "@/models/orderStatus";
 import { formatDate, formatMXN } from "@/utils/format";
 import { OrderTotals } from "@/views/OrderTotals";
 import { PrimaryButton } from "@/views/PrimaryButton";
@@ -16,6 +23,7 @@ export default function OrderDetail() {
   const { data: order, isLoading } = useOrder(id);
   const pay = usePayQuote();
   const cancel = useCancelQuote();
+  const remove = useDeleteQuote();
 
   if (isLoading || !order) {
     return (
@@ -32,6 +40,12 @@ export default function OrderDetail() {
     Alert.alert("Cancelar cotización", "¿Seguro que quieres cancelarla?", [
       { text: "No", style: "cancel" },
       { text: "Sí, cancelar", style: "destructive", onPress: () => cancel.mutate(order.id) },
+    ]);
+
+  const confirmDelete = () =>
+    Alert.alert("Eliminar cotización", "Esta acción no se puede deshacer.", [
+      { text: "No", style: "cancel" },
+      { text: "Eliminar", style: "destructive", onPress: () => remove.mutate(order.id) },
     ]);
 
   return (
@@ -90,7 +104,7 @@ export default function OrderDetail() {
         </View>
       </ScrollView>
 
-      {canPay(order.status) || canCancelQuote(order.status) ? (
+      {canPay(order.status) || canCancelQuote(order.status) || canDeleteQuote(order) ? (
         <View className="gap-2 border-t border-dark-100/5 bg-white px-5 pb-4 pt-3">
           {canPay(order.status) ? (
             <PrimaryButton
@@ -103,6 +117,13 @@ export default function OrderDetail() {
             <Pressable onPress={confirmCancel} disabled={cancel.isPending} className="items-center py-2">
               <Text className="font-quicksand-bold text-sm text-coral">
                 {cancel.isPending ? "Cancelando…" : "Cancelar cotización"}
+              </Text>
+            </Pressable>
+          ) : null}
+          {canDeleteQuote(order) ? (
+            <Pressable onPress={confirmDelete} disabled={remove.isPending} className="items-center py-2">
+              <Text className="font-quicksand-bold text-sm text-coral">
+                {remove.isPending ? "Eliminando…" : "Eliminar cotización"}
               </Text>
             </Pressable>
           ) : null}

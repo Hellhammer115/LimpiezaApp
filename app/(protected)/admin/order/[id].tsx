@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
+  useAdminDeleteQuote,
   useAdvanceOrder,
   useRejectQuote,
   useSendQuote,
@@ -25,6 +26,7 @@ import {
 import { useOrder } from "@/controllers/useOrders";
 import { useQuotePdf } from "@/controllers/useQuotePdf";
 import {
+  canDeleteQuote,
   FULFILLMENT_LABELS,
   isQuote,
   isQuoteEditable,
@@ -58,6 +60,7 @@ function Loaded({ order }: { order: OrderWithItems }) {
   const send = useSendQuote();
   const reject = useRejectQuote();
   const advance = useAdvanceOrder();
+  const remove = useAdminDeleteQuote();
   const pdf = useQuotePdf();
 
   const editable = isQuoteEditable(order.status);
@@ -116,9 +119,16 @@ function Loaded({ order }: { order: OrderWithItems }) {
     );
   };
 
+  const confirmDelete = () =>
+    Alert.alert("Eliminar cotización", "Esta acción no se puede deshacer.", [
+      { text: "No", style: "cancel" },
+      { text: "Eliminar", style: "destructive", onPress: () => remove.mutate(order.id) },
+    ]);
+
   const next = nextFulfillmentStatus(order.status);
   const [badgeBg, badgeText] = STATUS_STYLES[order.status];
-  const busy = update.isPending || send.isPending || reject.isPending || advance.isPending;
+  const busy =
+    update.isPending || send.isPending || reject.isPending || advance.isPending || remove.isPending;
 
   return (
     <SafeAreaView className="flex-1 bg-mist" edges={["top", "bottom"]}>
@@ -227,6 +237,14 @@ function Loaded({ order }: { order: OrderWithItems }) {
             onPress={() => advance.mutate({ id: order.id, to: next })}
             loading={advance.isPending}
           />
+        </View>
+      ) : canDeleteQuote(order) ? (
+        <View className="border-t border-dark-100/5 bg-white px-5 pb-4 pt-3">
+          <Pressable onPress={confirmDelete} disabled={busy} className="items-center py-2">
+            <Text className="font-quicksand-bold text-sm text-coral">
+              {remove.isPending ? "Eliminando…" : "Eliminar cotización"}
+            </Text>
+          </Pressable>
         </View>
       ) : null}
     </SafeAreaView>

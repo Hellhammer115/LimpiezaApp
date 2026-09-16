@@ -6,7 +6,7 @@ import { router } from "expo-router";
 import { Alert } from "react-native";
 
 import { openMercadoPagoCheckout, payQuote } from "@/models/paymentModel";
-import { cancelQuote } from "@/models/quoteModel";
+import { cancelQuote, deleteQuote } from "@/models/quoteModel";
 
 function useInvalidateOrders() {
   const queryClient = useQueryClient();
@@ -33,6 +33,19 @@ export function useCancelQuote() {
   return useMutation({
     mutationFn: (orderId: string) => cancelQuote(orderId),
     onSuccess: invalidate,
+    onError: (error) => Alert.alert("Error", error.message),
+  });
+}
+
+/** Deletes a cancelled quote, then returns to the Pedidos tab. Arg: order id. */
+export function useDeleteQuote() {
+  const invalidate = useInvalidateOrders();
+  return useMutation({
+    mutationFn: (orderId: string) => deleteQuote(orderId),
+    onSuccess: () => {
+      invalidate();
+      router.replace("/orders");
+    },
     onError: (error) => Alert.alert("Error", error.message),
   });
 }

@@ -33,3 +33,15 @@ export async function cancelQuote(orderId: string): Promise<void> {
     );
   }
 }
+
+/** Permanently removes the caller's own cancelled cotización. */
+export async function deleteQuote(orderId: string): Promise<void> {
+  const { error } = await supabase.functions.invoke("quote-actions", {
+    body: { action: "delete", orderId },
+  });
+  if (error) {
+    throw new Error(
+      await functionErrorMessage(error, "No se pudo eliminar la cotización.")
+    );
+  }
+}

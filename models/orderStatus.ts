@@ -96,3 +96,7 @@ export const FULFILLMENT_LABELS: Record<FulfillmentStatus, string> = {
   delivering: "En camino",
   delivered: "Entregado",
 };
+
+/** A cancelled, never-paid quote can be removed by its owner or an admin. */
+export const canDeleteQuote = (order: Pick<Order, "status" | "paid_at">) =>
+  order.status === "cancelled" && order.paid_at === null;

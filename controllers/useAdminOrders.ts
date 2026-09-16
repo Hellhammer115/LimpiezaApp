@@ -1,10 +1,12 @@
 // CONTROLLER — admin orders: everyone's cotizaciones/pedidos plus the
 // admin's edit/send/reject/advance actions. Only mounted behind useIsAdmin.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
 import { Alert } from "react-native";
 
 import {
   advanceOrder,
+  deleteQuote,
   listAdminOrders,
   rejectQuote,
   sendQuote,
@@ -63,5 +65,18 @@ export function useAdvanceOrder() {
     mutationFn: ({ id, to }: { id: string; to: FulfillmentStatus }) => advanceOrder(id, to),
     onSuccess: invalidate,
     onError: (error) => Alert.alert("No se actualizó", error.message),
+  });
+}
+
+/** Deletes a cancelled quote, then returns to the admin list. Arg: order id. */
+export function useAdminDeleteQuote() {
+  const invalidate = useInvalidateAllOrders();
+  return useMutation({
+    mutationFn: (id: string) => deleteQuote(id),
+    onSuccess: () => {
+      invalidate();
+      router.back();
+    },
+    onError: (error) => Alert.alert("No se eliminó", error.message),
   });
 }
