@@ -18,7 +18,8 @@ npx expo-doctor                   # project health
 npx supabase db push                              # apply supabase/migrations
 npx supabase functions deploy create-quote        # customer: cart -> cotización
 npx supabase functions deploy quote-actions       # customer: pay / cancel a cotización
-npx supabase functions deploy admin-orders        # admin: list / edit / send / reject / advance
+npx supabase functions deploy admin-orders        # admin: list / create / edit / send / reject / advance
+npx supabase functions deploy admin-users         # admin: customer lookup for admin-created quotes
 npx supabase functions deploy mp-webhook --no-verify-jwt   # MP calls it without a JWT; it validates x-signature instead
 ```
 
@@ -30,7 +31,7 @@ App config: copy `.env.example` → `.env`. `EXPO_PUBLIC_DEMO=1` enables demo mo
 
 Strict layering — views never import Supabase or models directly; the flow is always view → controller → model:
 
-- `models/` — data access + domain rules. All Supabase queries live here (`catalogModel`, `orderModel`, `profileModel`, `addressModel`, `authModel`, `paymentModel`, `quoteModel`, `adminModel`, `adminOrderModel`), plus the persisted zustand cart (`cartStore`), demo data, `delivery.ts` (display mirror of the fee rule), `orderStatus.ts` (status labels/predicates and `computeTotals`, the client mirror of the `apply_quote_edit` SQL formula), `quoteDocument.ts` (pure HTML for the PDF export) and `functionError.ts` (surfaces an Edge Function's Spanish `error` message).
+- `models/` — data access + domain rules. All Supabase queries live here (`catalogModel`, `orderModel`, `profileModel`, `addressModel`, `authModel`, `paymentModel`, `quoteModel`, `adminModel`, `adminOrderModel`), plus the persisted zustand cart (`cartStore`), demo data, `delivery.ts` (display mirror of the fee rule), `orderStatus.ts` (status labels/predicates and `computeTotals`, the client mirror of the `apply_quote_edit` SQL formula), `quoteDocument.ts` (pure HTML for the PDF export), `adminOrderModel.ts` (`lookupCustomers`, `createQuoteForCustomer` among the admin actions), `quoteModel.ts` (`acceptQuote`) and `functionError.ts` (surfaces an Edge Function's Spanish `error` message).
 - `controllers/` — hooks consumed by views: TanStack Query wrappers (`useCatalog`, `useOrders`, `useProfile`, `useAddresses`, `useAdminOrders`), session context (`useAuth` — `AuthProvider` mounts at root), cart selectors (`useCart`: prefer the primitive selectors `useInCart`/`useCartCount`/`useCartSubtotal` to avoid grid-wide re-renders), `useCheckout` (requests a cotización, no payment), `useQuote` (customer pay/cancel) and `useQuotePdf` (expo-print + expo-sharing).
 - `views/` — reusable UI components; `app/` — routed screens (expo-router requires them there; they are thin views).
 - `services/supabase.ts` — the client. Session storage is platform-dependent: AES-encrypted (key in Keychain/Keystore) on native, localStorage on web browser, DISABLED during SSR — Expo's static web output executes this module in Node where `window` doesn't exist, and touching storage there crashes the dev server.
@@ -40,7 +41,7 @@ Routing: `app/(auth)` (sign-in/up) and `app/(protected)` (everything else) are g
 
 ## Security invariants (do not weaken)
 
-- RLS on every table; catalog is client-read-only; `orders`/`order_items` are written ONLY by Edge Functions with the service role (admins additionally get `select` on every order). A cotización is an `orders` row with `paid_at IS NULL`. "Deleting" a cancelled quote only sets `hidden_by_customer_at` / `hidden_by_admin_at` (each list filters on its own flag); the row is physically removed once both are set. Clients never send amounts: `create-quote` recomputes all prices from the DB, and admins edit unpaid quotes only through `admin-orders` → `apply_quote_edit` (service-role RPC), which recomputes totals and clears any MP preference.
+- RLS on every table; catalog is client-read-only; `orders`/`order_items` are written ONLY by Edge Functions with the service role (admins additionally get `select` on every order). A cotización is an `orders` row with `paid_at IS NULL`. "Deleting" a cancelled quote only sets `hidden_by_customer_at` / `hidden_by_admin_at` (each list filters on its own flag); the row is physically removed once both are set. Admin-created quotes (`created_by_admin` set) are inserted by `admin-orders` `create` with `address_id = null` and totals from `apply_quote_edit`; the customer's `accept` action records address/slot and `pay` refuses until then. Clients never send amounts: `create-quote` recomputes all prices from the DB, and admins edit unpaid quotes only through `admin-orders` → `apply_quote_edit` (service-role RPC), which recomputes totals and clears any MP preference.
 - Payment truth comes exclusively from `mp-webhook` (validates the `x-signature` HMAC timing-safely, re-fetches the payment from MP's API, idempotent transitions). Only it sets `paid`/`paid_at`; a failed payment returns the row to `quote_sent`. `quote-actions` builds the MP preference from the stored quoted total, never from the client. The deep-link result screen only polls the order row; it never marks anything paid.
 - Money is always integer cents. `order_items.name`/`unit_price_cents` and `orders.delivery_address` are snapshots so history survives catalog/address changes.
 - No password column anywhere — Supabase Auth owns credentials. Never add hardcoded logins.
