@@ -7,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { EmptyState } from "@/views/EmptyState";
 import { PrimaryButton } from "@/views/PrimaryButton";
 import { QuantityStepper } from "@/views/QuantityStepper";
+import { useIsAdmin } from "@/controllers/useAdmin";
 import { useCart, useCartSubtotal } from "@/controllers/useCart";
 import { deliveryFeeCents } from "@/models/delivery";
 import { formatMXN } from "@/utils/format";
@@ -15,6 +16,7 @@ import { formatMXN } from "@/utils/format";
 export default function Cart() {
   const items = useCart((s) => s.items);
   const remove = useCart((s) => s.remove);
+  const { data: isAdmin } = useIsAdmin();
 
   const subtotal = useCartSubtotal();
   const deliveryFee = deliveryFeeCents(subtotal);
@@ -118,6 +120,16 @@ export default function Cart() {
                 title="Continuar"
                 onPress={() => router.push("/checkout")}
               />
+              {isAdmin ? (
+                <Pressable
+                  onPress={() => router.push("/admin/quote/new")}
+                  className="mt-2 items-center py-2"
+                >
+                  <Text className="font-quicksand-bold text-sm text-primary">
+                    Cotizar a un cliente
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
           </View>
         </>
