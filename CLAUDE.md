@@ -53,6 +53,7 @@ Routing: `app/(auth)` (sign-in/up) and `app/(protected)` (everything else) are g
 - The delivery fee/threshold constants are intentionally duplicated in `models/delivery.ts` (display) and `supabase/functions/_shared/delivery.ts` (authoritative, used by `create-quote`) — change both together.
 - Postgres cannot use a new enum value inside the migration that adds it — `ALTER TYPE … ADD VALUE` goes in its own migration file (see `20260915022643_quotes_enum.sql`).
 - Edge Function shared code lives in `supabase/functions/_shared/` and is imported with relative `../_shared/x.ts` paths; when deploying through the MCP, bundle those files next to the function's `index.ts`.
+- `services/supabase.ts` installs `react-native-url-polyfill`, whose `URLSearchParams` has no `size` getter (`params.size` is `undefined`); test emptiness with `params.toString()`.
 - The React Compiler lint rule `react-hooks/set-state-in-effect` fails `npx expo lint`; derive state from props/queries instead of syncing it in an effect (see the checkout address selection and the admin order editor).
 - Windows: source files are UTF-8 without BOM. Do not bulk-edit them with PowerShell 5.1 `Get-Content`/`Set-Content` (default ANSI decoding corrupts accented Spanish text); use Node scripts for mass rewrites.
 - Multiple stray Metro processes on this machine have caused phantom "old app" bugs; before debugging stale-bundle symptoms, check `Get-NetTCPConnection -State Listen` for extra node listeners and kill them.
