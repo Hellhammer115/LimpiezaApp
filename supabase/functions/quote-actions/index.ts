@@ -3,7 +3,8 @@
 //            line item: MP rejects negative discount lines) and moves the row
 //            to `pending`; the webhook decides the outcome.
 //   cancel — cancels an unpaid quote.
-//   delete — removes a cancelled, never-paid quote.
+//   delete — hides a cancelled, never-paid quote from the customer's list.
+//   accept — records the address/slot chosen for an admin-created quote.
 // Ownership is enforced by reading the order through the RLS-scoped client.
 // Deployed with verify_jwt = true.
 import { z } from "npm:zod@3";
@@ -11,10 +12,17 @@ import { z } from "npm:zod@3";
 import { getCaller } from "../_shared/auth.ts";
 import { json } from "../_shared/http.ts";
 
-const bodySchema = z.object({
-  action: z.enum(["pay", "cancel", "delete"]),
-  orderId: z.string().uuid(),
-});
+const bodySchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("pay"), orderId: z.string().uuid() }),
+  z.object({ action: z.literal("cancel"), orderId: z.string().uuid() }),
+  z.object({ action: z.literal("delete"), orderId: z.string().uuid() }),
+  z.object({
+    action: z.literal("accept"),
+    orderId: z.string().uuid(),
+    addressId: z.string().uuid(),
+    deliverySlot: z.string().min(1).max(100),
+  }),
+]);
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
@@ -26,12 +34,15 @@ Deno.serve(async (req) => {
 
     const parsed = bodySchema.safeParse(await req.json());
     if (!parsed.success) return json({ error: "Solicitud inválida" }, 400);
-    const { action, orderId } = parsed.data;
+    const body = parsed.data;
+    const { action, orderId } = body;
 
     // RLS: a customer can only see their own rows, so a foreign id is a 404.
     const { data: order, error: orderError } = await userClient
       .from("orders")
-      .select("id, status, total_cents, mp_init_point, order_items ( product_id, name, quantity )")
+      .select(
+        "id, status, total_cents, address_id, created_by_admin, mp_init_point, order_items ( product_id, name, quantity )"
+      )
       .eq("id", orderId)
       .maybeSingle();
     if (orderError) throw orderError;
@@ -73,7 +84,47 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    if (action === "accept") {
+      if (body.action !== "accept") return json({ error: "Solicitud inválida" }, 400);
+      if (order.status !== "quote_sent" || !order.created_by_admin || order.address_id) {
+        return json({ error: "Esta cotización no requiere aceptación" }, 409);
+      }
+      const { data: address } = await userClient
+        .from("addresses")
+        .select("id, label, street, colonia, city, zip")
+        .eq("id", body.addressId)
+        .maybeSingle();
+      if (!address) return json({ error: "Dirección no encontrada" }, 400);
+      const deliveryAddress = [
+        `${address.label}: ${address.street}`,
+        address.colonia,
+        `${address.city} ${address.zip}`.trim(),
+      ]
+        .filter(Boolean)
+        .join(", ");
+      const { data: accepted, error } = await admin
+        .from("orders")
+        .update({
+          address_id: address.id,
+          delivery_address: deliveryAddress,
+          delivery_slot: body.deliverySlot,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", orderId)
+        .eq("status", "quote_sent")
+        .is("address_id", null)
+        .select("id");
+      if (error) throw error;
+      if (!accepted || accepted.length === 0) {
+        return json({ error: "Esta cotización no requiere aceptación" }, 409);
+      }
+      return json({ ok: true });
+    }
+
     // action === "pay"
+    if (!order.address_id) {
+      return json({ error: "Elige una dirección y horario antes de pagar" }, 409);
+    }
     if (order.status === "pending" && order.mp_init_point) {
       // Customer closed the browser earlier; resume the same preference.
       return json({ initPoint: order.mp_init_point });
