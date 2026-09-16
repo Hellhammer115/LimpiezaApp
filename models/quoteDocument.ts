@@ -72,8 +72,8 @@ export function buildQuoteHtml(order: OrderWithItems): string {
     <p>${esc(order.customer_email)}</p>
   </section>
   <section><h3>Entrega</h3>
-    <p>${esc(order.delivery_address)}</p>
-    <p>${esc(order.delivery_slot)}</p>
+    <p>${esc(order.delivery_address || "Por definir")}</p>
+    <p>${esc(order.delivery_slot || "Por definir")}</p>
   </section>
 </div>
 <table>

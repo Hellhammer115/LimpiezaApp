@@ -41,7 +41,7 @@ export function OrderCard({ order, showCustomer, onPress }: Props) {
         {formatDate(order.created_at)}
       </Text>
       <View className="mt-2 flex-row items-center justify-between">
-        <Text className="font-quicksand-medium text-sm text-dark-100/60">{order.delivery_slot}</Text>
+        <Text className="font-quicksand-medium text-sm text-dark-100/60">{order.delivery_slot || "Por definir"}</Text>
         <Text className="font-quicksand-bold text-base text-dark-100">
           {formatMXN(order.total_cents)}
         </Text>

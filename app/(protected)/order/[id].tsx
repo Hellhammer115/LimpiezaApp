@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -8,7 +8,9 @@ import {
   canCancelQuote,
   canDeleteQuote,
   canPay,
+  isAdminQuote,
   isQuote,
+  needsAcceptance,
   STATUS_LABELS,
   STATUS_STYLES,
 } from "@/models/orderStatus";
@@ -36,11 +38,21 @@ export default function OrderDetail() {
   const [badgeBg, badgeText] = STATUS_STYLES[order.status];
   const kindLabel = isQuote(order) ? "Cotización" : "Pedido";
 
+  // An admin-created quote is "rejected"; a customer-requested one "cancelled".
+  const rejecting = needsAcceptance(order);
   const confirmCancel = () =>
-    Alert.alert("Cancelar cotización", "¿Seguro que quieres cancelarla?", [
-      { text: "No", style: "cancel" },
-      { text: "Sí, cancelar", style: "destructive", onPress: () => cancel.mutate(order.id) },
-    ]);
+    Alert.alert(
+      rejecting ? "Rechazar cotización" : "Cancelar cotización",
+      rejecting ? "¿Seguro que quieres rechazarla?" : "¿Seguro que quieres cancelarla?",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: rejecting ? "Sí, rechazar" : "Sí, cancelar",
+          style: "destructive",
+          onPress: () => cancel.mutate(order.id),
+        },
+      ]
+    );
 
   const confirmDelete = () =>
     Alert.alert("Eliminar cotización", "Se quitará de tu lista de cotizaciones.", [
@@ -63,11 +75,21 @@ export default function OrderDetail() {
               </Text>
             </View>
           </View>
-          <Text className="mt-2 font-quicksand-bold text-dark-100">{order.delivery_slot}</Text>
+          <Text className="mt-2 font-quicksand-bold text-dark-100">
+            {order.delivery_slot || "Por definir"}
+          </Text>
           <Text className="mt-1 font-quicksand-medium text-sm text-dark-100/60">
-            {order.delivery_address}
+            {order.delivery_address || "Por definir"}
           </Text>
         </View>
+
+        {isAdminQuote(order) ? (
+          <Text className="mt-3 px-1 font-quicksand-medium text-sm text-dark-100/60">
+            {needsAcceptance(order)
+              ? "Cotización enviada por LimpiezaApp. Acéptala para elegir dirección y horario, o recházala."
+              : "Cotización enviada por LimpiezaApp."}
+          </Text>
+        ) : null}
 
         {order.status === "quote_requested" ? (
           <Text className="mt-3 px-1 font-quicksand-medium text-sm text-dark-100/60">
@@ -106,7 +128,12 @@ export default function OrderDetail() {
 
       {canPay(order.status) || canCancelQuote(order.status) || canDeleteQuote(order) ? (
         <View className="gap-2 border-t border-dark-100/5 bg-white px-5 pb-4 pt-3">
-          {canPay(order.status) ? (
+          {needsAcceptance(order) ? (
+            <PrimaryButton
+              title="Aceptar cotización"
+              onPress={() => router.push(`/order/accept/${order.id}`)}
+            />
+          ) : canPay(order.status) ? (
             <PrimaryButton
               title={`Pagar ${formatMXN(order.total_cents)} con Mercado Pago`}
               onPress={() => pay.mutate(order.id)}
@@ -116,7 +143,13 @@ export default function OrderDetail() {
           {canCancelQuote(order.status) ? (
             <Pressable onPress={confirmCancel} disabled={cancel.isPending} className="items-center py-2">
               <Text className="font-quicksand-bold text-sm text-coral">
-                {cancel.isPending ? "Cancelando…" : "Cancelar cotización"}
+                {cancel.isPending
+                  ? rejecting
+                    ? "Rechazando…"
+                    : "Cancelando…"
+                  : rejecting
+                    ? "Rechazar cotización"
+                    : "Cancelar cotización"}
               </Text>
             </Pressable>
           ) : null}

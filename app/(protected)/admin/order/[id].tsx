@@ -172,9 +172,11 @@ function Loaded({ order }: { order: OrderWithItems }) {
           {order.customer_phone ? (
             <Text className="font-quicksand-medium text-sm text-dark-100/60">{order.customer_phone}</Text>
           ) : null}
-          <Text className="mt-3 font-quicksand-bold text-dark-100">{order.delivery_slot}</Text>
+          <Text className="mt-3 font-quicksand-bold text-dark-100">
+            {order.delivery_slot || "Por definir"}
+          </Text>
           <Text className="mt-1 font-quicksand-medium text-sm text-dark-100/60">
-            {order.delivery_address}
+            {order.delivery_address || "Por definir"}
           </Text>
         </View>
 
