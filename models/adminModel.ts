@@ -28,7 +28,10 @@ export async function invokeAdminFunction<T>(
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value) params.set(key, value);
   }
-  const suffix = params.size > 0 ? `?${params.toString()}` : "";
+  // Not `params.size`: react-native-url-polyfill's URLSearchParams has no
+  // size getter, so that check is always false and the query gets dropped.
+  const queryString = params.toString();
+  const suffix = queryString ? `?${queryString}` : "";
   const { data, error } = await supabase.functions.invoke(`${fn}${suffix}`, {
     method,
     body: body as Record<string, unknown> | undefined,
