@@ -1,9 +1,15 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { useEffect } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useOrder } from "@/controllers/useOrders";
-import { useCancelQuote, useDeleteQuote, usePayQuote } from "@/controllers/useQuote";
+import {
+  useCancelQuote,
+  useDeleteQuote,
+  useMarkQuoteUpdateSeen,
+  usePayQuote,
+} from "@/controllers/useQuote";
 import {
   canCancelQuote,
   canDeleteQuote,
@@ -14,9 +20,11 @@ import {
   STATUS_LABELS,
   STATUS_STYLES,
 } from "@/models/orderStatus";
+import { diffQuote, hasQuoteRevision, hasUnseenQuoteUpdate } from "@/models/quoteRevision";
 import { formatDate, formatMXN } from "@/utils/format";
 import { OrderTotals } from "@/views/OrderTotals";
 import { PrimaryButton } from "@/views/PrimaryButton";
+import { PreviousQuote, QuoteChanges } from "@/views/QuoteComparison";
 import { ScreenHeader } from "@/views/ScreenHeader";
 
 /** VIEW — customer order/cotización detail: items, address, totals, live status, pay/cancel. */
@@ -26,6 +34,13 @@ export default function OrderDetail() {
   const pay = usePayQuote();
   const cancel = useCancelQuote();
   const remove = useDeleteQuote();
+  const { mutate: markSeen } = useMarkQuoteUpdateSeen();
+
+  // Opening an updated quote clears its "actualizada" icon in the list.
+  const unseenUpdate = !!order && hasUnseenQuoteUpdate(order);
+  useEffect(() => {
+    if (unseenUpdate && id) markSeen(id);
+  }, [unseenUpdate, id, markSeen]);
 
   if (isLoading || !order) {
     return (
@@ -36,6 +51,8 @@ export default function OrderDetail() {
   }
 
   const [badgeBg, badgeText] = STATUS_STYLES[order.status];
+  const previous = hasQuoteRevision(order) ? order.previous_quote : null;
+  const diff = previous ? diffQuote(previous, order) : null;
   const kindLabel = isQuote(order) ? "Cotización" : "Pedido";
 
   // An admin-created quote is "rejected"; a customer-requested one "cancelled".
@@ -97,6 +114,8 @@ export default function OrderDetail() {
           </Text>
         ) : null}
 
+        {previous && diff ? <QuoteChanges previous={previous} order={order} diff={diff} /> : null}
+
         {order.admin_note ? (
           <View className="mt-4 rounded-2xl bg-foam p-4">
             <Text className="font-quicksand-bold text-sm text-primary">Nota del asesor</Text>
@@ -104,10 +123,15 @@ export default function OrderDetail() {
           </View>
         ) : null}
 
-        <Text className="mb-2 mt-6 font-quicksand-bold text-lg text-dark-100">Productos</Text>
+        <Text className="mb-2 mt-6 font-quicksand-bold text-lg text-dark-100">
+          {previous ? "Cotización actualizada" : "Productos"}
+        </Text>
         <View className="rounded-2xl bg-white p-4">
           {order.order_items.map((item) => (
-            <View key={item.id} className="mb-2 flex-row justify-between">
+            <View key={item.id} className="mb-2 flex-row items-center justify-between">
+              {diff?.changedItemIds.has(item.id) ? (
+                <View className="mr-2 h-2 w-2 rounded-full bg-tide" />
+              ) : null}
               <Text numberOfLines={1} className="flex-1 pr-3 font-quicksand-medium text-sm text-dark-100/80">
                 {item.quantity}× {item.name}
               </Text>
@@ -124,6 +148,8 @@ export default function OrderDetail() {
             total={order.total_cents}
           />
         </View>
+
+        {previous ? <PreviousQuote previous={previous} /> : null}
       </ScrollView>
 
       {canPay(order.status) || canCancelQuote(order.status) || canDeleteQuote(order) ? (

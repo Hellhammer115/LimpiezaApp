@@ -1,6 +1,8 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 
 import { STATUS_LABELS, STATUS_STYLES } from "@/models/orderStatus";
+import { hasUnseenQuoteUpdate } from "@/models/quoteRevision";
 import type { Order } from "@/models/types";
 import { formatDate, formatMXN } from "@/utils/format";
 
@@ -15,17 +17,30 @@ interface Props {
 export function OrderCard({ order, showCustomer, onPress }: Props) {
   const [badgeBg, badgeText] = STATUS_STYLES[order.status];
   const isNew = order.status === "quote_requested";
+  // Customer side only: the admin list shares this card.
+  const updated = !showCustomer && hasUnseenQuoteUpdate(order);
   const kindLabel = order.paid_at ? "Pedido" : "Cotización";
 
   return (
     <Pressable
       onPress={onPress}
-      className={`mb-3 rounded-2xl bg-white p-4 ${isNew ? "border border-citrus/60" : ""}`}
+      className={`mb-3 rounded-2xl bg-white p-4 ${isNew ? "border border-citrus/60" : updated ? "border border-tide/60" : ""}`}
     >
       <View className="flex-row items-center justify-between">
-        <Text className="font-quicksand-bold text-dark-100">
-          {kindLabel} #{order.id.slice(0, 8)}
-        </Text>
+        <View className="flex-1 flex-row items-center pr-2">
+          <Text className="font-quicksand-bold text-dark-100">
+            {kindLabel} #{order.id.slice(0, 8)}
+          </Text>
+          {updated ? (
+            <View
+              accessibilityLabel="Cotización actualizada"
+              className="ml-2 flex-row items-center rounded-full bg-tide/15 px-2 py-0.5"
+            >
+              <Ionicons name="sparkles" size={12} color="#2E86AB" />
+              <Text className="ml-1 font-quicksand-bold text-xs text-tide">Actualizada</Text>
+            </View>
+          ) : null}
+        </View>
         <View className={`rounded-full px-3 py-1 ${badgeBg}`}>
           <Text className={`font-quicksand-bold text-xs ${badgeText}`}>
             {STATUS_LABELS[order.status]}

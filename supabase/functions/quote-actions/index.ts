@@ -5,6 +5,7 @@
 //   cancel — cancels an unpaid quote.
 //   delete — hides a cancelled, never-paid quote from the customer's list.
 //   accept — records the address/slot chosen for an admin-created quote.
+//   seen   — marks the latest admin update of the quote as viewed.
 // Ownership is enforced by reading the order through the RLS-scoped client.
 // Deployed with verify_jwt = true.
 import { z } from "npm:zod@3";
@@ -16,6 +17,7 @@ const bodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("pay"), orderId: z.string().uuid() }),
   z.object({ action: z.literal("cancel"), orderId: z.string().uuid() }),
   z.object({ action: z.literal("delete"), orderId: z.string().uuid() }),
+  z.object({ action: z.literal("seen"), orderId: z.string().uuid() }),
   z.object({
     action: z.literal("accept"),
     orderId: z.string().uuid(),
@@ -59,6 +61,17 @@ Deno.serve(async (req) => {
       if (!updated || updated.length === 0) {
         return json({ error: "La cotización ya no se puede cancelar" }, 409);
       }
+      return json({ ok: true });
+    }
+
+    if (action === "seen") {
+      // Idempotent; a quote that was never updated has nothing to mark.
+      const { error } = await admin
+        .from("orders")
+        .update({ quote_update_seen_at: new Date().toISOString() })
+        .eq("id", orderId)
+        .not("quote_updated_at", "is", null);
+      if (error) throw error;
       return json({ ok: true });
     }
 

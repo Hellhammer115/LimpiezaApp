@@ -235,6 +235,8 @@ Deno.serve(async (req) => {
           p_discount_cents: body.discount.type === "amount" ? body.discount.cents : 0,
           p_discount_percent: body.discount.type === "percent" ? body.discount.value : null,
           p_admin_note: body.admin_note,
+          // A brand-new quote has no earlier version for the customer to compare.
+          p_track_revision: false,
         });
         if (editError) {
           await admin.from("orders").delete().eq("id", order.id);
@@ -261,7 +263,9 @@ Deno.serve(async (req) => {
           .update({ status: "quote_sent", quoted_at: now, quoted_by: user.id, updated_at: now })
           .eq("id", body.id)
           .in("status", ["quote_requested", "quote_sent"])
-          .select("id, customer_email, customer_name, total_cents, created_by_admin, address_id");
+          .select(
+            "id, customer_email, customer_name, total_cents, created_by_admin, address_id, quote_updated_at, quote_update_seen_at"
+          );
         if (error) throw error;
         const row = updated?.[0];
         if (!row) return json({ error: "La cotización ya no se puede enviar" }, 409);
@@ -277,11 +281,18 @@ Deno.serve(async (req) => {
             row.created_by_admin && !row.address_id
               ? "para aceptarla, elegir tu dirección y pagarla, o rechazarla."
               : "para revisarla y pagarla.";
+          // An update the customer hasn't opened yet: the app shows what changed.
+          const revised =
+            !!row.quote_updated_at &&
+            (!row.quote_update_seen_at ||
+              Date.parse(row.quote_update_seen_at) < Date.parse(row.quote_updated_at));
           await sendEmail({
             to: [row.customer_email],
-            subject: `Tu cotización #${row.id.slice(0, 8)} está lista`,
+            subject: revised
+              ? `Tu cotización #${row.id.slice(0, 8)} fue actualizada`
+              : `Tu cotización #${row.id.slice(0, 8)} está lista`,
             html: `<p>Hola ${escapeHtml(row.customer_name || "")},</p>
-<p>Tu cotización está lista por un total de <strong>${total}</strong>.</p>
+<p>${revised ? "Actualizamos tu cotización; el nuevo total es" : "Tu cotización está lista por un total de"} <strong>${total}</strong>.</p>${revised ? "<p>En la app verás la cotización anterior junto a la nueva para revisar qué cambió.</p>" : ""}
 <p>Ábrela en LimpiezaApp (Pedidos → Cotizaciones) ${nextStep}</p>`,
           });
         }

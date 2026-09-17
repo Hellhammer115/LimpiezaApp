@@ -46,6 +46,16 @@ export async function deleteQuote(orderId: string): Promise<void> {
   }
 }
 
+/** Records that the customer opened the latest admin update of their quote. */
+export async function markQuoteUpdateSeen(orderId: string): Promise<void> {
+  const { error } = await supabase.functions.invoke("quote-actions", {
+    body: { action: "seen", orderId },
+  });
+  if (error) {
+    throw new Error(await functionErrorMessage(error, "No se pudo actualizar la cotización."));
+  }
+}
+
 /** Accepts an admin-created quote by choosing the delivery address and slot. */
 export async function acceptQuote(
   orderId: string,

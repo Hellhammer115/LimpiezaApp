@@ -95,6 +95,12 @@ export interface Order {
   /** Admin who sent this quote; null for customer-requested ones. */
   created_by_admin: string | null;
   mp_payment_id: string | null;
+  /** The version the customer last saw before an admin changed the sent quote. */
+  previous_quote: QuoteSnapshot | null;
+  /** When the current version replaced previous_quote. */
+  quote_updated_at: string | null;
+  /** When the customer opened the updated quote. */
+  quote_update_seen_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -110,6 +116,25 @@ export interface OrderItem {
   unit_price_cents: number;
   /** Catalog price when the quote was requested. */
   catalog_price_cents: number;
+}
+
+/** A past version of a quote, as stored by the quote_snapshot SQL function. */
+export interface QuoteSnapshot {
+  items: {
+    id: string;
+    product_id: string;
+    name: string;
+    quantity: number;
+    unit_price_cents: number;
+  }[];
+  subtotal_cents: number;
+  discount_cents: number;
+  discount_percent: number | null;
+  delivery_fee_cents: number;
+  total_cents: number;
+  admin_note: string | null;
+  /** When this version was sent (or last updated). */
+  quoted_at: string | null;
 }
 
 export type DiscountInput =
