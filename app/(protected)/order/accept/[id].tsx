@@ -35,8 +35,11 @@ export default function AcceptQuote() {
       </SafeAreaView>
     );
   }
-  // Already accepted (or not an admin quote): nothing to do here.
-  if (!needsAcceptance(order)) return <Redirect href={`/order/${order.id}`} />;
+  // Already accepted (or not an admin quote): nothing to do here. Not while
+  // this screen's own accept/pay is in flight — the accept success refetches
+  // the order and would otherwise unmount us mid-payment.
+  const busy = accept.isPending || accept.isSuccess || pay.isPending;
+  if (!busy && !needsAcceptance(order)) return <Redirect href={`/order/${order.id}`} />;
 
   const acceptAndPay = async () => {
     if (!addressId) return;

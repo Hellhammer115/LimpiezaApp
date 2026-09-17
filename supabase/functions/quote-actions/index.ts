@@ -122,7 +122,9 @@ Deno.serve(async (req) => {
     }
 
     // action === "pay"
-    if (!order.address_id) {
+    // Only admin-created quotes start without an address; a customer-requested
+    // quote whose address was later deleted keeps its snapshot and stays payable.
+    if (order.created_by_admin && !order.address_id) {
       return json({ error: "Elige una dirección y horario antes de pagar" }, 409);
     }
     if (order.status === "pending" && order.mp_init_point) {

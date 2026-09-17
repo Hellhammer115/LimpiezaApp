@@ -105,6 +105,6 @@ export const canDeleteQuote = (order: Pick<Order, "status" | "paid_at">) =>
 export const isAdminQuote = (order: Pick<Order, "created_by_admin">) =>
   order.created_by_admin !== null;
 
-/** Admin-created and the customer has not chosen address/slot yet. */
-export const needsAcceptance = (order: Pick<Order, "created_by_admin" | "address_id">) =>
-  order.created_by_admin !== null && order.address_id === null;
+/** Admin-created, still sent (not cancelled/paid) and no address chosen yet — mirrors the server accept guard. */
+export const needsAcceptance = (order: Pick<Order, "status" | "created_by_admin" | "address_id">) =>
+  order.status === "quote_sent" && order.created_by_admin !== null && order.address_id === null;

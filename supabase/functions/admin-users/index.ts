@@ -12,8 +12,9 @@ Deno.serve(async (req) => {
     const { admin, user } = caller;
     if (!(await requireAdmin(admin, user.id))) return json({ error: "Prohibido" }, 403);
 
-    // Strip PostgREST filter syntax characters before interpolating.
-    const q = (new URL(req.url).searchParams.get("q") ?? "").trim().replace(/[%,()]/g, "");
+    // Strip PostgREST filter syntax characters (and the `*` ilike wildcard)
+    // before interpolating.
+    const q = (new URL(req.url).searchParams.get("q") ?? "").trim().replace(/[%*,()"\\]/g, "");
     if (q.length < 3) return json({ error: "Escribe al menos 3 caracteres" }, 400);
 
     const { data, error } = await admin

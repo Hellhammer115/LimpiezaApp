@@ -183,6 +183,7 @@ export function QuoteEditor({ draft, onChange }: Props) {
           placeholder="Opcional"
           placeholderTextColor="rgba(16,36,31,0.35)"
           multiline
+          maxLength={1000}
           className="input min-h-[64px]"
         />
 

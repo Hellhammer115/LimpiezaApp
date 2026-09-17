@@ -12,8 +12,11 @@ import { json } from "../_shared/http.ts";
 
 const ORDER_WITH_ITEMS = "*, order_items ( * )";
 
+/** Upper bound for any money field ($999,999.99): keeps values inside int4. */
+const MAX_CENTS = 99_999_999;
+
 const discountSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("amount"), cents: z.number().int().min(0) }),
+  z.object({ type: z.literal("amount"), cents: z.number().int().min(0).max(MAX_CENTS) }),
   z.object({ type: z.literal("percent"), value: z.number().int().min(0).max(100) }),
 ]);
 
@@ -24,12 +27,12 @@ const patchSchema = z.object({
       z.object({
         id: z.string().uuid(),
         quantity: z.number().int().min(1).max(99),
-        unit_price_cents: z.number().int().min(0),
+        unit_price_cents: z.number().int().min(0).max(MAX_CENTS),
       })
     )
     .min(1)
     .max(50),
-  delivery_fee_cents: z.number().int().min(0),
+  delivery_fee_cents: z.number().int().min(0).max(MAX_CENTS),
   discount: discountSchema,
   admin_note: z.string().max(1000).nullable(),
 });
@@ -43,12 +46,12 @@ const createSchema = z.object({
       z.object({
         productId: z.string().uuid(),
         quantity: z.number().int().min(1).max(99),
-        unit_price_cents: z.number().int().min(0),
+        unit_price_cents: z.number().int().min(0).max(MAX_CENTS),
       })
     )
     .min(1)
     .max(50),
-  delivery_fee_cents: z.number().int().min(0),
+  delivery_fee_cents: z.number().int().min(0).max(MAX_CENTS),
   discount: discountSchema,
   admin_note: z.string().max(1000).nullable(),
 });
@@ -258,7 +261,7 @@ Deno.serve(async (req) => {
           .update({ status: "quote_sent", quoted_at: now, quoted_by: user.id, updated_at: now })
           .eq("id", body.id)
           .in("status", ["quote_requested", "quote_sent"])
-          .select("id, customer_email, customer_name, total_cents");
+          .select("id, customer_email, customer_name, total_cents, created_by_admin, address_id");
         if (error) throw error;
         const row = updated?.[0];
         if (!row) return json({ error: "La cotización ya no se puede enviar" }, 409);
@@ -268,12 +271,18 @@ Deno.serve(async (req) => {
             style: "currency",
             currency: "MXN",
           });
+          // An admin-created quote the customer hasn't accepted can't be paid
+          // yet: tell them to accept (choose address/slot) first.
+          const nextStep =
+            row.created_by_admin && !row.address_id
+              ? "para aceptarla, elegir tu dirección y pagarla, o rechazarla."
+              : "para revisarla y pagarla.";
           await sendEmail({
             to: [row.customer_email],
             subject: `Tu cotización #${row.id.slice(0, 8)} está lista`,
             html: `<p>Hola ${escapeHtml(row.customer_name || "")},</p>
 <p>Tu cotización está lista por un total de <strong>${total}</strong>.</p>
-<p>Ábrela en LimpiezaApp (Pedidos → Cotizaciones) para revisarla y pagarla.</p>`,
+<p>Ábrela en LimpiezaApp (Pedidos → Cotizaciones) ${nextStep}</p>`,
           });
         }
         return json(await fetchOrder(body.id));
