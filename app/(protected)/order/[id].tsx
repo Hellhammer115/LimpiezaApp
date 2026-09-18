@@ -1,13 +1,12 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useOrder } from "@/controllers/useOrders";
 import {
+  useAcceptQuoteUpdate,
   useCancelQuote,
   useDeleteQuote,
-  useMarkQuoteUpdateSeen,
   usePayQuote,
 } from "@/controllers/useQuote";
 import {
@@ -17,15 +16,14 @@ import {
   isAdminQuote,
   isQuote,
   needsAcceptance,
-  STATUS_LABELS,
-  STATUS_STYLES,
 } from "@/models/orderStatus";
-import { diffQuote, hasQuoteRevision, hasUnseenQuoteUpdate } from "@/models/quoteRevision";
+import { diffQuote, hasPendingQuoteUpdate, hasQuoteRevision } from "@/models/quoteRevision";
 import { formatDate, formatMXN } from "@/utils/format";
 import { OrderTotals } from "@/views/OrderTotals";
 import { PrimaryButton } from "@/views/PrimaryButton";
 import { PreviousQuote, QuoteChanges } from "@/views/QuoteComparison";
 import { ScreenHeader } from "@/views/ScreenHeader";
+import { StatusPill } from "@/views/StatusPill";
 
 /** VIEW — customer order/cotización detail: items, address, totals, live status, pay/cancel. */
 export default function OrderDetail() {
@@ -34,13 +32,7 @@ export default function OrderDetail() {
   const pay = usePayQuote();
   const cancel = useCancelQuote();
   const remove = useDeleteQuote();
-  const { mutate: markSeen } = useMarkQuoteUpdateSeen();
-
-  // Opening an updated quote clears its "actualizada" icon in the list.
-  const unseenUpdate = !!order && hasUnseenQuoteUpdate(order);
-  useEffect(() => {
-    if (unseenUpdate && id) markSeen(id);
-  }, [unseenUpdate, id, markSeen]);
+  const acceptUpdate = useAcceptQuoteUpdate();
 
   if (isLoading || !order) {
     return (
@@ -50,7 +42,8 @@ export default function OrderDetail() {
     );
   }
 
-  const [badgeBg, badgeText] = STATUS_STYLES[order.status];
+  // An admin's change must be accepted before anything else (accept/pay).
+  const pendingUpdate = hasPendingQuoteUpdate(order);
   const previous = hasQuoteRevision(order) ? order.previous_quote : null;
   const diff = previous ? diffQuote(previous, order) : null;
   const kindLabel = isQuote(order) ? "Cotización" : "Pedido";
@@ -86,11 +79,7 @@ export default function OrderDetail() {
             <Text className="font-quicksand-medium text-sm text-dark-100/60">
               {formatDate(order.created_at)}
             </Text>
-            <View className={`rounded-full px-3 py-1 ${badgeBg}`}>
-              <Text className={`font-quicksand-bold text-xs ${badgeText}`}>
-                {STATUS_LABELS[order.status]}
-              </Text>
-            </View>
+            <StatusPill order={order} />
           </View>
           <Text className="mt-2 font-quicksand-bold text-dark-100">
             {order.delivery_slot || "Por definir"}
@@ -114,7 +103,7 @@ export default function OrderDetail() {
           </Text>
         ) : null}
 
-        {previous && diff ? <QuoteChanges previous={previous} order={order} diff={diff} /> : null}
+        {previous && diff ? <QuoteChanges previous={previous} order={order} diff={diff} pending={pendingUpdate} /> : null}
 
         {order.admin_note ? (
           <View className="mt-4 rounded-2xl bg-foam p-4">
@@ -154,7 +143,15 @@ export default function OrderDetail() {
 
       {canPay(order.status) || canCancelQuote(order.status) || canDeleteQuote(order) ? (
         <View className="gap-2 border-t border-dark-100/5 bg-white px-5 pb-4 pt-3">
-          {needsAcceptance(order) ? (
+          {pendingUpdate && order.quote_updated_at ? (
+            <PrimaryButton
+              title="Aceptar cambios"
+              onPress={() =>
+                acceptUpdate.mutate({ orderId: order.id, updatedAt: order.quote_updated_at! })
+              }
+              loading={acceptUpdate.isPending}
+            />
+          ) : needsAcceptance(order) ? (
             <PrimaryButton
               title="Aceptar cotización"
               onPress={() => router.push(`/order/accept/${order.id}`)}

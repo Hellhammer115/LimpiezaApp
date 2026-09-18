@@ -1,7 +1,7 @@
 // MODEL — cotización document: pure HTML rendering of an order for the PDF
 // export. No React Native imports; inline CSS only (expo-print renders it in
 // a WebView). Money is formatted here from integer cents.
-import { STATUS_LABELS } from "@/models/orderStatus";
+import { statusBadge } from "@/models/orderStatus";
 import type { OrderWithItems } from "@/models/types";
 import { formatDate, formatMXN } from "@/utils/format";
 
@@ -63,7 +63,7 @@ export function buildQuoteHtml(order: OrderWithItems): string {
 </style></head><body>
 <header>
   <div><h1>LimpiezaApp</h1><h2>${title} #${folio}</h2></div>
-  <div class="meta"><p>${esc(formatDate(order.created_at))}</p><p>${esc(STATUS_LABELS[order.status])}</p></div>
+  <div class="meta"><p>${esc(formatDate(order.created_at))}</p><p>${esc(statusBadge(order).label)}</p></div>
 </header>
 <div class="cols">
   <section><h3>Cliente</h3>

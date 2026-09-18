@@ -1,6 +1,7 @@
 // MODEL — order-status domain rules: display labels, badge styles, state
 // predicates and the single money formula shared by every screen that
 // renders or edits an order/cotización.
+import { hasPendingQuoteUpdate } from "@/models/quoteRevision";
 import type {
   DiscountInput,
   FulfillmentStatus,
@@ -108,3 +109,50 @@ export const isAdminQuote = (order: Pick<Order, "created_by_admin">) =>
 /** Admin-created, still sent (not cancelled/paid) and no address chosen yet — mirrors the server accept guard. */
 export const needsAcceptance = (order: Pick<Order, "status" | "created_by_admin" | "address_id">) =>
   order.status === "quote_sent" && order.created_by_admin !== null && order.address_id === null;
+
+export interface StatusBadge {
+  label: string;
+  /** [badge background class, badge text class] */
+  style: [string, string];
+  /** Needs the customer's attention (the view adds an icon). */
+  highlight: boolean;
+}
+
+/**
+ * The single status tag shown for an order. A sent quote reads "Cotización
+ * actualizada" while the customer still has to accept an admin's change,
+ * "Cotización enviada" while an admin-created quote awaits the customer's
+ * acceptance, and "Cotización aceptada" otherwise.
+ */
+export function statusBadge(
+  order: Pick<
+    Order,
+    | "status"
+    | "paid_at"
+    | "created_by_admin"
+    | "address_id"
+    | "previous_quote"
+    | "quote_updated_at"
+    | "quote_update_accepted_at"
+  >
+): StatusBadge {
+  if (hasPendingQuoteUpdate(order)) {
+    return {
+      label: "Cotización actualizada",
+      style: ["bg-citrus/20", "text-citrus"],
+      highlight: true,
+    };
+  }
+  if (order.status === "quote_sent" && !needsAcceptance(order)) {
+    return {
+      label: "Cotización aceptada",
+      style: ["bg-primary/15", "text-primary"],
+      highlight: false,
+    };
+  }
+  return {
+    label: STATUS_LABELS[order.status],
+    style: STATUS_STYLES[order.status],
+    highlight: false,
+  };
+}

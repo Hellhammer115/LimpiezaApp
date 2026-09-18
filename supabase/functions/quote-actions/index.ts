@@ -5,7 +5,8 @@
 //   cancel — cancels an unpaid quote.
 //   delete — hides a cancelled, never-paid quote from the customer's list.
 //   accept — records the address/slot chosen for an admin-created quote.
-//   seen   — marks the latest admin update of the quote as viewed.
+//   accept_update — accepts the admin's latest change to a sent quote; pay
+//            refuses while an update is pending.
 // Ownership is enforced by reading the order through the RLS-scoped client.
 // Deployed with verify_jwt = true.
 import { z } from "npm:zod@3";
@@ -17,7 +18,12 @@ const bodySchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("pay"), orderId: z.string().uuid() }),
   z.object({ action: z.literal("cancel"), orderId: z.string().uuid() }),
   z.object({ action: z.literal("delete"), orderId: z.string().uuid() }),
-  z.object({ action: z.literal("seen"), orderId: z.string().uuid() }),
+  z.object({
+    action: z.literal("accept_update"),
+    orderId: z.string().uuid(),
+    // The version the customer reviewed; a newer admin edit is not accepted.
+    updatedAt: z.string().min(1).max(64),
+  }),
   z.object({
     action: z.literal("accept"),
     orderId: z.string().uuid(),
@@ -25,6 +31,18 @@ const bodySchema = z.discriminatedUnion("action", [
     deliverySlot: z.string().min(1).max(100),
   }),
 ]);
+
+/** The admin changed the sent quote and the customer hasn't accepted it yet. */
+function hasPendingUpdate(order: {
+  quote_updated_at: string | null;
+  quote_update_accepted_at: string | null;
+}): boolean {
+  return (
+    !!order.quote_updated_at &&
+    (!order.quote_update_accepted_at ||
+      Date.parse(order.quote_update_accepted_at) < Date.parse(order.quote_updated_at))
+  );
+}
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
@@ -43,7 +61,7 @@ Deno.serve(async (req) => {
     const { data: order, error: orderError } = await userClient
       .from("orders")
       .select(
-        "id, status, total_cents, address_id, created_by_admin, mp_init_point, order_items ( product_id, name, quantity )"
+        "id, status, total_cents, address_id, created_by_admin, mp_init_point, quote_updated_at, quote_update_accepted_at, order_items ( product_id, name, quantity )"
       )
       .eq("id", orderId)
       .maybeSingle();
@@ -64,14 +82,21 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
-    if (action === "seen") {
-      // Idempotent; a quote that was never updated has nothing to mark.
-      const { error } = await admin
+    if (action === "accept_update") {
+      if (body.action !== "accept_update") return json({ error: "Solicitud inválida" }, 400);
+      // Guarded on the reviewed version: if the admin changed the quote again
+      // meanwhile, the customer has to review that version first.
+      const { data: accepted, error } = await admin
         .from("orders")
-        .update({ quote_update_seen_at: new Date().toISOString() })
+        .update({ quote_update_accepted_at: new Date().toISOString() })
         .eq("id", orderId)
-        .not("quote_updated_at", "is", null);
+        .eq("status", "quote_sent")
+        .eq("quote_updated_at", body.updatedAt)
+        .select("id");
       if (error) throw error;
+      if (!accepted || accepted.length === 0) {
+        return json({ error: "La cotización cambió de nuevo, revisa los cambios" }, 409);
+      }
       return json({ ok: true });
     }
 
@@ -139,6 +164,9 @@ Deno.serve(async (req) => {
     // quote whose address was later deleted keeps its snapshot and stays payable.
     if (order.created_by_admin && !order.address_id) {
       return json({ error: "Elige una dirección y horario antes de pagar" }, 409);
+    }
+    if (hasPendingUpdate(order)) {
+      return json({ error: "Acepta los cambios de la cotización antes de pagar" }, 409);
     }
     if (order.status === "pending" && order.mp_init_point) {
       // Customer closed the browser earlier; resume the same preference.

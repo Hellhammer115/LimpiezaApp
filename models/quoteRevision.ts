@@ -5,20 +5,23 @@ import type { Order, OrderWithItems, QuoteSnapshot } from "@/models/types";
 
 type RevisionFields = Pick<
   Order,
-  "status" | "paid_at" | "previous_quote" | "quote_updated_at" | "quote_update_seen_at"
+  "status" | "paid_at" | "previous_quote" | "quote_updated_at" | "quote_update_accepted_at"
 >;
 
 /** Unpaid quote with an earlier version to compare against. */
 export const hasQuoteRevision = (order: RevisionFields) =>
   order.paid_at === null && order.status !== "cancelled" && order.previous_quote !== null;
 
-/** The customer hasn't opened the latest update yet — drives the list icon. */
-export const hasUnseenQuoteUpdate = (order: RevisionFields) =>
+/**
+ * The admin changed the sent quote and the customer hasn't accepted the change
+ * yet — they can't pay until they do. Mirrors the quote-actions pay guard.
+ */
+export const hasPendingQuoteUpdate = (order: RevisionFields) =>
   hasQuoteRevision(order) &&
   order.status === "quote_sent" &&
   order.quote_updated_at !== null &&
-  (order.quote_update_seen_at === null ||
-    Date.parse(order.quote_update_seen_at) < Date.parse(order.quote_updated_at));
+  (order.quote_update_accepted_at === null ||
+    Date.parse(order.quote_update_accepted_at) < Date.parse(order.quote_updated_at));
 
 export type LineChange = "added" | "removed" | "changed" | "same";
 

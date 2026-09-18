@@ -21,22 +21,32 @@ interface ChangesProps {
   previous: QuoteSnapshot;
   order: OrderWithItems;
   diff: QuoteDiff;
+  /** The customer still has to accept this update before paying. */
+  pending: boolean;
 }
 
 /** VIEW — "your quote was updated" banner plus a line-by-line summary of what changed. */
-export function QuoteChanges({ previous, order, diff }: ChangesProps) {
+export function QuoteChanges({ previous, order, diff, pending }: ChangesProps) {
   const changedLines = diff.lines.filter((l) => l.change !== "same");
   const delta = diff.totalDelta;
 
   return (
     <View className="mt-4">
-      <View className="flex-row rounded-2xl bg-tide/15 p-4">
-        <Ionicons name="sparkles" size={20} color="#2E86AB" />
+      <View className={`flex-row rounded-2xl p-4 ${pending ? "bg-citrus/20" : "bg-foam"}`}>
+        <Ionicons
+          name={pending ? "sparkles" : "checkmark-circle"}
+          size={20}
+          color={pending ? "#F2B705" : "#3E8368"}
+        />
         <View className="ml-3 flex-1">
-          <Text className="font-quicksand-bold text-tide">Tu cotización fue actualizada</Text>
+          <Text className={`font-quicksand-bold ${pending ? "text-dark-100" : "text-primary"}`}>
+            {pending ? "Tu cotización fue actualizada" : "Aceptaste los cambios"}
+          </Text>
           <Text className="mt-1 font-quicksand-medium text-sm text-dark-100/70">
             {order.quote_updated_at ? `${formatDate(order.quote_updated_at)} · ` : ""}
-            Revisa qué cambió antes de pagar. Abajo verás la cotización actualizada y la anterior.
+            {pending
+              ? "Revisa qué cambió y acepta los cambios para poder pagar. Abajo verás la cotización actualizada y la anterior."
+              : "Abajo verás la cotización actualizada y la anterior."}
           </Text>
         </View>
       </View>

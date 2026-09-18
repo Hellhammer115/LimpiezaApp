@@ -31,8 +31,6 @@ import {
   isQuote,
   isQuoteEditable,
   nextFulfillmentStatus,
-  STATUS_LABELS,
-  STATUS_STYLES,
 } from "@/models/orderStatus";
 import type { OrderWithItems } from "@/models/types";
 import { formatDate, formatMXN } from "@/utils/format";
@@ -40,6 +38,7 @@ import { OrderTotals } from "@/views/OrderTotals";
 import { PrimaryButton } from "@/views/PrimaryButton";
 import { draftFromOrder, draftToInput, QuoteEditor, type QuoteDraft } from "@/views/QuoteEditor";
 import { ScreenHeader } from "@/views/ScreenHeader";
+import { StatusPill } from "@/views/StatusPill";
 
 export default function AdminOrderDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -73,25 +72,27 @@ function Loaded({ order }: { order: OrderWithItems }) {
 
   const onDraftChange = (d: QuoteDraft) => setEdits(d);
 
-  // Throws on failure so sendQuote never sends unsaved edits.
-  const saveEdits = async () => {
-    await update.mutateAsync({ id: order.id, input: draftToInput(draft) });
-    setEdits(null);
-  };
+  // One action for every editable quote. A new request is accepted as-is
+  // ("Aceptar") or with the admin's edits ("Guardar y enviar"); a quote the
+  // customer already has is only saved ("Guardar cambios") and re-sent so they
+  // get the "actualizada" email. Edits are saved first and a failed save
+  // throws, so unsaved edits are never sent.
+  const isNewRequest = order.status === "quote_requested";
+  const actionTitle = isNewRequest ? (dirty ? "Guardar y enviar" : "Aceptar") : "Guardar cambios";
 
-  const save = async () => {
+  const submit = async () => {
     try {
-      await saveEdits();
-    } catch {
-      // The mutation hook already alerted.
-    }
-  };
-
-  const sendQuote = async () => {
-    try {
-      if (dirty) await saveEdits();
+      if (dirty) {
+        await update.mutateAsync({ id: order.id, input: draftToInput(draft) });
+        setEdits(null);
+      }
       await send.mutateAsync(order.id);
-      Alert.alert("Cotización enviada", "El cliente ya puede verla y pagarla.");
+      Alert.alert(
+        isNewRequest ? "Cotización enviada" : "Cambios guardados",
+        isNewRequest
+          ? "El cliente ya puede verla y pagarla."
+          : "El cliente verá qué cambió y deberá aceptar los cambios para poder pagar."
+      );
     } catch {
       // The mutation hooks already alerted.
     }
@@ -129,7 +130,6 @@ function Loaded({ order }: { order: OrderWithItems }) {
     ]);
 
   const next = nextFulfillmentStatus(order.status);
-  const [badgeBg, badgeText] = STATUS_STYLES[order.status];
   const busy =
     update.isPending || send.isPending || reject.isPending || advance.isPending || remove.isPending;
 
@@ -159,11 +159,7 @@ function Loaded({ order }: { order: OrderWithItems }) {
             <Text className="font-quicksand-medium text-sm text-dark-100/60">
               {formatDate(order.created_at)}
             </Text>
-            <View className={`rounded-full px-3 py-1 ${badgeBg}`}>
-              <Text className={`font-quicksand-bold text-xs ${badgeText}`}>
-                {STATUS_LABELS[order.status]}
-              </Text>
-            </View>
+            <StatusPill order={order} />
           </View>
           <Text className="mt-3 font-quicksand-bold text-dark-100">
             {order.customer_name || "Cliente"}
@@ -219,21 +215,15 @@ function Loaded({ order }: { order: OrderWithItems }) {
       {editable ? (
         <View className="gap-2 border-t border-dark-100/5 bg-white px-5 pb-4 pt-3">
           <PrimaryButton
-            title={order.status === "quote_sent" ? "Reenviar cotización" : "Enviar cotización"}
-            onPress={sendQuote}
-            loading={send.isPending || (update.isPending && !dirty)}
-            disabled={busy || draft.items.length === 0}
+            title={actionTitle}
+            onPress={submit}
+            loading={update.isPending || send.isPending}
+            // A sent quote has nothing to do until the admin changes something.
+            disabled={busy || draft.items.length === 0 || (!isNewRequest && !dirty)}
           />
-          <View className="flex-row justify-between px-1">
-            <Pressable onPress={rejectQuote} disabled={busy} className="py-2">
-              <Text className="font-quicksand-bold text-sm text-coral">Rechazar</Text>
-            </Pressable>
-            <Pressable onPress={save} disabled={!dirty || busy} className={`py-2 ${dirty ? "" : "opacity-40"}`}>
-              <Text className="font-quicksand-bold text-sm text-primary">
-                {update.isPending ? "Guardando…" : "Guardar cambios"}
-              </Text>
-            </Pressable>
-          </View>
+          <Pressable onPress={rejectQuote} disabled={busy} className="items-center py-2">
+            <Text className="font-quicksand-bold text-sm text-coral">Rechazar</Text>
+          </Pressable>
         </View>
       ) : next ? (
         <View className="border-t border-dark-100/5 bg-white px-5 pb-4 pt-3">

@@ -99,8 +99,8 @@ export interface Order {
   previous_quote: QuoteSnapshot | null;
   /** When the current version replaced previous_quote. */
   quote_updated_at: string | null;
-  /** When the customer opened the updated quote. */
-  quote_update_seen_at: string | null;
+  /** When the customer accepted the update; paying needs it ≥ quote_updated_at. */
+  quote_update_accepted_at: string | null;
   created_at: string;
   updated_at: string;
 }

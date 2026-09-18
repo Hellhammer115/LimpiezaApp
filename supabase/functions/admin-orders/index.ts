@@ -264,7 +264,7 @@ Deno.serve(async (req) => {
           .eq("id", body.id)
           .in("status", ["quote_requested", "quote_sent"])
           .select(
-            "id, customer_email, customer_name, total_cents, created_by_admin, address_id, quote_updated_at, quote_update_seen_at"
+            "id, customer_email, customer_name, total_cents, created_by_admin, address_id, quote_updated_at, quote_update_accepted_at"
           );
         if (error) throw error;
         const row = updated?.[0];
@@ -281,18 +281,19 @@ Deno.serve(async (req) => {
             row.created_by_admin && !row.address_id
               ? "para aceptarla, elegir tu dirección y pagarla, o rechazarla."
               : "para revisarla y pagarla.";
-          // An update the customer hasn't opened yet: the app shows what changed.
+          // An update the customer hasn't accepted yet: the app shows what
+          // changed and asks them to accept it before paying.
           const revised =
             !!row.quote_updated_at &&
-            (!row.quote_update_seen_at ||
-              Date.parse(row.quote_update_seen_at) < Date.parse(row.quote_updated_at));
+            (!row.quote_update_accepted_at ||
+              Date.parse(row.quote_update_accepted_at) < Date.parse(row.quote_updated_at));
           await sendEmail({
             to: [row.customer_email],
             subject: revised
               ? `Tu cotización #${row.id.slice(0, 8)} fue actualizada`
               : `Tu cotización #${row.id.slice(0, 8)} está lista`,
             html: `<p>Hola ${escapeHtml(row.customer_name || "")},</p>
-<p>${revised ? "Actualizamos tu cotización; el nuevo total es" : "Tu cotización está lista por un total de"} <strong>${total}</strong>.</p>${revised ? "<p>En la app verás la cotización anterior junto a la nueva para revisar qué cambió.</p>" : ""}
+<p>${revised ? "Actualizamos tu cotización; el nuevo total es" : "Tu cotización está lista por un total de"} <strong>${total}</strong>.</p>${revised ? "<p>En la app verás la cotización anterior junto a la nueva para revisar qué cambió; acepta los cambios para poder pagar.</p>" : ""}
 <p>Ábrela en LimpiezaApp (Pedidos → Cotizaciones) ${nextStep}</p>`,
           });
         }

@@ -6,7 +6,7 @@ import { router } from "expo-router";
 import { Alert } from "react-native";
 
 import { openMercadoPagoCheckout, payQuote } from "@/models/paymentModel";
-import { acceptQuote, cancelQuote, deleteQuote, markQuoteUpdateSeen } from "@/models/quoteModel";
+import { acceptQuote, acceptQuoteUpdate, cancelQuote, deleteQuote } from "@/models/quoteModel";
 
 function useInvalidateOrders() {
   const queryClient = useQueryClient();
@@ -50,15 +50,14 @@ export function useDeleteQuote() {
   });
 }
 
-/**
- * Clears the "actualizada" icon once the customer opens an updated quote.
- * Silent on failure: the icon simply stays until the next visit.
- */
-export function useMarkQuoteUpdateSeen() {
+/** Accepts the admin's latest change to a sent quote, unlocking payment. */
+export function useAcceptQuoteUpdate() {
   const invalidate = useInvalidateOrders();
   return useMutation({
-    mutationFn: (orderId: string) => markQuoteUpdateSeen(orderId),
-    onSuccess: invalidate,
+    mutationFn: ({ orderId, updatedAt }: { orderId: string; updatedAt: string }) =>
+      acceptQuoteUpdate(orderId, updatedAt),
+    onSettled: invalidate,
+    onError: (error) => Alert.alert("Error", error.message),
   });
 }
 
