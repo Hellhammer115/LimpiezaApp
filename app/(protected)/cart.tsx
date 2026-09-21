@@ -4,18 +4,21 @@ import { router } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { EmptyState } from "@/components/EmptyState";
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { QuantityStepper } from "@/components/QuantityStepper";
-import { deliveryFeeCents } from "@/lib/delivery";
-import { formatMXN } from "@/lib/format";
-import { cartSubtotalCents, useCart } from "@/store/cart";
+import { EmptyState } from "@/views/EmptyState";
+import { PrimaryButton } from "@/views/PrimaryButton";
+import { QuantityStepper } from "@/views/QuantityStepper";
+import { useIsAdmin } from "@/controllers/useAdmin";
+import { useCart, useCartSubtotal } from "@/controllers/useCart";
+import { deliveryFeeCents } from "@/models/delivery";
+import { formatMXN } from "@/utils/format";
 
+/** VIEW — cart modal: line items, totals, and the door into checkout. */
 export default function Cart() {
   const items = useCart((s) => s.items);
   const remove = useCart((s) => s.remove);
+  const { data: isAdmin } = useIsAdmin();
 
-  const subtotal = cartSubtotalCents(items);
+  const subtotal = useCartSubtotal();
   const deliveryFee = deliveryFeeCents(subtotal);
   const total = subtotal + deliveryFee;
 
@@ -53,7 +56,7 @@ export default function Cart() {
                     <Image
                       source={{ uri: item.imageUrl }}
                       style={{ width: "100%", height: "100%", borderRadius: 12 }}
-                      contentFit="cover"
+                      contentFit="contain"
                     />
                   ) : (
                     <Ionicons name="basket-outline" size={24} color="#3E8368" />
@@ -117,6 +120,16 @@ export default function Cart() {
                 title="Continuar"
                 onPress={() => router.push("/checkout")}
               />
+              {isAdmin ? (
+                <Pressable
+                  onPress={() => router.push("/admin/quote/new")}
+                  className="mt-2 items-center py-2"
+                >
+                  <Text className="font-quicksand-bold text-sm text-primary">
+                    Cotizar a un cliente
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
           </View>
         </>

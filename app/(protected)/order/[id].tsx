@@ -1,21 +1,38 @@
-import { useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ScreenHeader } from "@/components/ScreenHeader";
-import { formatDate, formatMXN } from "@/lib/format";
-import { isFinal, STATUS_LABELS, STATUS_STYLES } from "@/lib/orderStatus";
-import { useOrder } from "@/lib/queries";
+import { useOrder } from "@/controllers/useOrders";
+import {
+  useAcceptQuoteUpdate,
+  useCancelQuote,
+  useDeleteQuote,
+  usePayQuote,
+} from "@/controllers/useQuote";
+import {
+  canCancelQuote,
+  canDeleteQuote,
+  canPay,
+  isAdminQuote,
+  isQuote,
+  needsAcceptance,
+} from "@/models/orderStatus";
+import { diffQuote, hasPendingQuoteUpdate, hasQuoteRevision } from "@/models/quoteRevision";
+import { formatDate, formatMXN } from "@/utils/format";
+import { OrderTotals } from "@/views/OrderTotals";
+import { PrimaryButton } from "@/views/PrimaryButton";
+import { PreviousQuote, QuoteChanges } from "@/views/QuoteComparison";
+import { ScreenHeader } from "@/views/ScreenHeader";
+import { StatusPill } from "@/views/StatusPill";
 
+/** VIEW — customer order/cotización detail: items, address, totals, live status, pay/cancel. */
 export default function OrderDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: order, isLoading } = useOrder(id, {
-    // Poll while the order can still change; stop once delivered/cancelled.
-    refetchInterval: (query) => {
-      const current = query.state.data;
-      return current && isFinal(current.status) ? false : 5000;
-    },
-  });
+  const { data: order, isLoading } = useOrder(id);
+  const pay = usePayQuote();
+  const cancel = useCancelQuote();
+  const remove = useDeleteQuote();
+  const acceptUpdate = useAcceptQuoteUpdate();
 
   if (isLoading || !order) {
     return (
@@ -25,41 +42,86 @@ export default function OrderDetail() {
     );
   }
 
-  const [badgeBg, badgeText] = STATUS_STYLES[order.status];
+  // An admin's change must be accepted before anything else (accept/pay).
+  const pendingUpdate = hasPendingQuoteUpdate(order);
+  const previous = hasQuoteRevision(order) ? order.previous_quote : null;
+  const diff = previous ? diffQuote(previous, order) : null;
+  const kindLabel = isQuote(order) ? "Cotización" : "Pedido";
+
+  // An admin-created quote is "rejected"; a customer-requested one "cancelled".
+  const rejecting = needsAcceptance(order);
+  const confirmCancel = () =>
+    Alert.alert(
+      rejecting ? "Rechazar cotización" : "Cancelar cotización",
+      rejecting ? "¿Seguro que quieres rechazarla?" : "¿Seguro que quieres cancelarla?",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: rejecting ? "Sí, rechazar" : "Sí, cancelar",
+          style: "destructive",
+          onPress: () => cancel.mutate(order.id),
+        },
+      ]
+    );
+
+  const confirmDelete = () =>
+    Alert.alert("Eliminar cotización", "Se quitará de tu lista de cotizaciones.", [
+      { text: "No", style: "cancel" },
+      { text: "Eliminar", style: "destructive", onPress: () => remove.mutate(order.id) },
+    ]);
 
   return (
-    <SafeAreaView className="flex-1 bg-mist" edges={["top"]}>
-      <ScreenHeader title={`Pedido #${order.id.slice(0, 8)}`} />
+    <SafeAreaView className="flex-1 bg-mist" edges={["top", "bottom"]}>
+      <ScreenHeader title={`${kindLabel} #${order.id.slice(0, 8)}`} />
       <ScrollView contentContainerClassName="px-5 pb-8">
         <View className="rounded-2xl bg-white p-4">
           <View className="flex-row items-center justify-between">
             <Text className="font-quicksand-medium text-sm text-dark-100/60">
               {formatDate(order.created_at)}
             </Text>
-            <View className={`rounded-full px-3 py-1 ${badgeBg}`}>
-              <Text className={`font-quicksand-bold text-xs ${badgeText}`}>
-                {STATUS_LABELS[order.status]}
-              </Text>
-            </View>
+            <StatusPill order={order} />
           </View>
           <Text className="mt-2 font-quicksand-bold text-dark-100">
-            {order.delivery_slot}
+            {order.delivery_slot || "Por definir"}
           </Text>
           <Text className="mt-1 font-quicksand-medium text-sm text-dark-100/60">
-            {order.delivery_address}
+            {order.delivery_address || "Por definir"}
           </Text>
         </View>
 
+        {isAdminQuote(order) ? (
+          <Text className="mt-3 px-1 font-quicksand-medium text-sm text-dark-100/60">
+            {needsAcceptance(order)
+              ? "Cotización enviada por LimpiezaApp. Acéptala para elegir dirección y horario, o recházala."
+              : "Cotización enviada por LimpiezaApp."}
+          </Text>
+        ) : null}
+
+        {order.status === "quote_requested" ? (
+          <Text className="mt-3 px-1 font-quicksand-medium text-sm text-dark-100/60">
+            Un asesor está revisando tu cotización. Te avisaremos cuando esté lista para pagar.
+          </Text>
+        ) : null}
+
+        {previous && diff ? <QuoteChanges previous={previous} order={order} diff={diff} pending={pendingUpdate} /> : null}
+
+        {order.admin_note ? (
+          <View className="mt-4 rounded-2xl bg-foam p-4">
+            <Text className="font-quicksand-bold text-sm text-primary">Nota del asesor</Text>
+            <Text className="mt-1 font-quicksand-medium text-sm text-dark-100">{order.admin_note}</Text>
+          </View>
+        ) : null}
+
         <Text className="mb-2 mt-6 font-quicksand-bold text-lg text-dark-100">
-          Productos
+          {previous ? "Cotización actualizada" : "Productos"}
         </Text>
         <View className="rounded-2xl bg-white p-4">
           {order.order_items.map((item) => (
-            <View key={item.id} className="mb-2 flex-row justify-between">
-              <Text
-                numberOfLines={1}
-                className="flex-1 pr-3 font-quicksand-medium text-sm text-dark-100/80"
-              >
+            <View key={item.id} className="mb-2 flex-row items-center justify-between">
+              {diff?.changedItemIds.has(item.id) ? (
+                <View className="mr-2 h-2 w-2 rounded-full bg-tide" />
+              ) : null}
+              <Text numberOfLines={1} className="flex-1 pr-3 font-quicksand-medium text-sm text-dark-100/80">
                 {item.quantity}× {item.name}
               </Text>
               <Text className="font-quicksand-semibold text-sm text-dark-100">
@@ -67,36 +129,62 @@ export default function OrderDetail() {
               </Text>
             </View>
           ))}
-          <View className="mt-2 border-t border-dark-100/5 pt-2">
-            <View className="flex-row justify-between">
-              <Text className="font-quicksand-medium text-dark-100/60">
-                Subtotal
-              </Text>
-              <Text className="font-quicksand-semibold text-dark-100">
-                {formatMXN(order.subtotal_cents)}
-              </Text>
-            </View>
-            <View className="mt-1 flex-row justify-between">
-              <Text className="font-quicksand-medium text-dark-100/60">
-                Envío
-              </Text>
-              <Text className="font-quicksand-semibold text-dark-100">
-                {order.delivery_fee_cents === 0
-                  ? "Gratis"
-                  : formatMXN(order.delivery_fee_cents)}
-              </Text>
-            </View>
-            <View className="mt-1 flex-row justify-between">
-              <Text className="font-quicksand-bold text-base text-dark-100">
-                Total
-              </Text>
-              <Text className="font-quicksand-bold text-base text-dark-100">
-                {formatMXN(order.total_cents)}
-              </Text>
-            </View>
-          </View>
+          <OrderTotals
+            subtotal={order.subtotal_cents}
+            discount={order.discount_cents}
+            discountPercent={order.discount_percent}
+            deliveryFee={order.delivery_fee_cents}
+            total={order.total_cents}
+          />
         </View>
+
+        {previous ? <PreviousQuote previous={previous} /> : null}
       </ScrollView>
+
+      {canPay(order.status) || canCancelQuote(order.status) || canDeleteQuote(order) ? (
+        <View className="gap-2 border-t border-dark-100/5 bg-white px-5 pb-4 pt-3">
+          {pendingUpdate && order.quote_updated_at ? (
+            <PrimaryButton
+              title="Aceptar cambios"
+              onPress={() =>
+                acceptUpdate.mutate({ orderId: order.id, updatedAt: order.quote_updated_at! })
+              }
+              loading={acceptUpdate.isPending}
+            />
+          ) : needsAcceptance(order) ? (
+            <PrimaryButton
+              title="Aceptar cotización"
+              onPress={() => router.push(`/order/accept/${order.id}`)}
+            />
+          ) : canPay(order.status) ? (
+            <PrimaryButton
+              title={`Pagar ${formatMXN(order.total_cents)} con Mercado Pago`}
+              onPress={() => pay.mutate(order.id)}
+              loading={pay.isPending}
+            />
+          ) : null}
+          {canCancelQuote(order.status) ? (
+            <Pressable onPress={confirmCancel} disabled={cancel.isPending} className="items-center py-2">
+              <Text className="font-quicksand-bold text-sm text-coral">
+                {cancel.isPending
+                  ? rejecting
+                    ? "Rechazando…"
+                    : "Cancelando…"
+                  : rejecting
+                    ? "Rechazar cotización"
+                    : "Cancelar cotización"}
+              </Text>
+            </Pressable>
+          ) : null}
+          {canDeleteQuote(order) ? (
+            <Pressable onPress={confirmDelete} disabled={remove.isPending} className="items-center py-2">
+              <Text className="font-quicksand-bold text-sm text-coral">
+                {remove.isPending ? "Eliminando…" : "Eliminar cotización"}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }

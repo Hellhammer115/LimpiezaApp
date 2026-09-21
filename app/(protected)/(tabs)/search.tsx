@@ -11,10 +11,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { EmptyState } from "@/components/EmptyState";
-import { ProductCard } from "@/components/ProductCard";
-import { useCategories, useProducts } from "@/lib/queries";
+import { useCategories, useProducts } from "@/controllers/useCatalog";
+import { EmptyState } from "@/views/EmptyState";
+import { ProductCard } from "@/views/ProductCard";
 
+/** VIEW — search tab: debounced name search plus category filter chips. */
 export default function Search() {
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");

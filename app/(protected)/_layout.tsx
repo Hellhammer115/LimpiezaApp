@@ -1,7 +1,7 @@
 import { Redirect, Stack } from "expo-router";
 
-import { useAuth } from "@/lib/auth";
-import { DEMO_MODE } from "@/lib/demo";
+import { useAuth } from "@/controllers/useAuth";
+import { DEMO_MODE } from "@/models/demoData";
 
 export default function ProtectedLayout() {
   const { session, loading } = useAuth();

@@ -33,10 +33,15 @@ yarn-error.*
 # IDE
 .idea/
 
+expo-dev.log
+
 # local env files (never commit secrets; .env.example is the tracked template)
 .env
 .env.*
 !.env.example
+
+# local MCP server config — may carry access tokens
+.mcp.json
 
 # typescript
 *.tsbuildinfo
@@ -46,3 +51,12 @@ app-example
 # generated native folders
 /ios
 /android
+
+# local git worktrees
+.worktrees/
+
+# Supabase CLI local link state (project ref, cached versions)
+supabase/.temp/
+
+# subagent-driven-development scratch (ledger, briefs, review packages)
+.superpowers/

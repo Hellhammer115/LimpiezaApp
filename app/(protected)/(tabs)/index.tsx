@@ -3,25 +3,26 @@ import { router } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { CategoryTile } from "@/components/CategoryTile";
-import { ProductCard } from "@/components/ProductCard";
-import { PromoCarousel } from "@/components/PromoCarousel";
+import { CategoryTile } from "@/views/CategoryTile";
+import { ProductCard } from "@/views/ProductCard";
+import { PromoCarousel } from "@/views/PromoCarousel";
 import {
   FREE_DELIVERY_THRESHOLD_CENTS,
-} from "@/lib/delivery";
-import { formatMXN } from "@/lib/format";
-import { useCategories, useProducts } from "@/lib/queries";
-import { cartCount, cartSubtotalCents, useCart } from "@/store/cart";
+} from "@/models/delivery";
+import { useCartCount, useCartSubtotal } from "@/controllers/useCart";
+import { useCategories, useProducts } from "@/controllers/useCatalog";
+import { formatMXN } from "@/utils/format";
 
 const ICON_MUTED = "rgba(16,36,31,0.35)";
 const ICON_PRIMARY = "#3E8368";
 
+/** VIEW — home tab: promos, free-delivery progress, categories, featured. */
 export default function Home() {
   const { data: categories } = useCategories();
   const { data: featured } = useProducts({ limit: 6 });
   // Primitive selectors so the screen re-renders only when these change.
-  const subtotal = useCart((s) => cartSubtotalCents(s.items));
-  const count = useCart((s) => cartCount(s.items));
+  const subtotal = useCartSubtotal();
+  const count = useCartCount();
   const progress = Math.min(subtotal / FREE_DELIVERY_THRESHOLD_CENTS, 1);
   const remaining = Math.max(FREE_DELIVERY_THRESHOLD_CENTS - subtotal, 0);
 

@@ -6,9 +6,9 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "r
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { FormInput } from "@/components/FormInput";
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { supabase } from "@/lib/supabase";
+import { SignUpError, signUp } from "@/controllers/useAuth";
+import { FormInput } from "@/views/FormInput";
+import { PrimaryButton } from "@/views/PrimaryButton";
 
 const schema = z
   .object({
@@ -33,9 +33,10 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>;
 
+/** VIEW — sign-up screen: validates the form and delegates to the auth controller. */
 export default function SignUp() {
   const [submitting, setSubmitting] = useState(false);
-  const { control, handleSubmit } = useForm<FormValues>({
+  const { control, handleSubmit, setError } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: "",
@@ -47,26 +48,35 @@ export default function SignUp() {
     },
   });
 
+  /**
+   * Creates the account through the auth controller. When e-mail
+   * confirmation is enabled the session starts only after the user clicks
+   * the link, so we send them back to sign-in with instructions.
+   *
+   * A taken e-mail or phone becomes an inline error on that field —
+   * an Alert would leave the user guessing which one collided.
+   */
   const onSubmit = handleSubmit(async ({ name, last_name, phone, email, password }) => {
     setSubmitting(true);
-    // The profile row is created by a database trigger from this metadata;
-    // the password is stored hashed by Supabase Auth, never in our tables.
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name, last_name, phone } },
-    });
-    setSubmitting(false);
-    if (error) {
-      Alert.alert("Error", "No se pudo crear la cuenta. Intenta de nuevo.");
-      return;
-    }
-    if (!data.session) {
-      Alert.alert(
-        "Confirma tu correo",
-        "Te enviamos un enlace de confirmación. Revísalo para activar tu cuenta.",
-        [{ text: "OK", onPress: () => router.replace("/sign-in") }]
-      );
+    try {
+      const sessionStarted = await signUp({ name, last_name, phone, email, password });
+      if (!sessionStarted) {
+        Alert.alert(
+          "Confirma tu correo",
+          "Te enviamos un enlace de confirmación. Revísalo para activar tu cuenta.",
+          [{ text: "OK", onPress: () => router.replace("/sign-in") }]
+        );
+      }
+    } catch (error) {
+      if (error instanceof SignUpError && error.reason === "email_taken") {
+        setError("email", { message: "Ese correo ya tiene una cuenta" });
+      } else if (error instanceof SignUpError && error.reason === "phone_taken") {
+        setError("phone", { message: "Ese teléfono ya está registrado" });
+      } else {
+        Alert.alert("Error", "No se pudo crear la cuenta. Intenta de nuevo.");
+      }
+    } finally {
+      setSubmitting(false);
     }
   });
 

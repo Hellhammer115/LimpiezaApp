@@ -11,19 +11,34 @@ Aplicación de súper y limpieza a domicilio (estilo Calii) construida con
 - **Supabase**: todas las tablas tienen **Row Level Security**. Los clientes
   solo leen catálogo y sus propios datos; los pedidos los crea y actualiza
   exclusivamente el servidor.
-- **Pagos**: `create-order` (Edge Function) recalcula precios desde la base
-  de datos y crea la preferencia de Mercado Pago; `mp-webhook` valida la
-  firma `x-signature`, consulta el pago a la API de MP y actualiza el pedido
-  de forma idempotente. **La app nunca decide si un pago fue exitoso.**
+- **Pagos**: el flujo es cotización primero — `create-quote` (Edge Function)
+  recalcula precios desde la base de datos y crea la cotización; el admin la
+  edita, envía o rechaza con `quote-actions` / `admin-orders`; solo tras
+  enviarla el cliente paga y `mp-webhook` valida la firma `x-signature`,
+  consulta el pago a la API de MP y actualiza el pedido de forma idempotente.
+  **La app nunca decide si un pago fue exitoso.**
+
+La app sigue una arquitectura **Modelo–Vista–Controlador** (adaptada a
+React Native: expo-router exige que las pantallas vivan en `app/`):
 
 ```
-app/(auth)          sign-in / sign-up
-app/(protected)     tabs (inicio, buscar, pedidos, cuenta), producto,
-                    categoría, carrito, checkout, resultado de pago
-lib/                supabase client (sesión cifrada), queries, pagos
-store/cart.ts       carrito persistido
-supabase/           migraciones SQL, seed, edge functions
+models/             MODELO — acceso a datos y reglas de dominio:
+                    catálogo, pedidos, perfil, direcciones, auth, pagos,
+                    carrito (zustand), datos demo, tipos
+controllers/        CONTROLADOR — hooks que conectan modelos con vistas:
+                    useCatalog, useOrders, useProfile, useAddresses,
+                    useAuth (sesión), useCart, useCheckout (flujo de pago)
+views/              VISTA — componentes reutilizables (ProductCard, etc.)
+app/(auth)          VISTA — pantallas: sign-in / sign-up
+app/(protected)     VISTA — pantallas: tabs, producto, categoría, carrito,
+                    checkout, resultado de pago, pedidos
+services/           infraestructura: cliente de Supabase (sesión cifrada)
+utils/              utilidades puras (formato de moneda/fechas)
+supabase/           migraciones SQL, seed, edge functions (lado servidor)
 ```
+
+Las vistas nunca tocan Supabase directamente: siempre pasan por un
+controlador, que a su vez usa un modelo.
 
 ## Configuración
 
@@ -61,8 +76,10 @@ cp .env.example .env
    ```sh
    npx supabase secrets set MP_ACCESS_TOKEN=TEST-...
    npx supabase secrets set MP_WEBHOOK_SECRET=...
-   npx supabase functions deploy create-order
-   npx supabase functions deploy mp-webhook --no-verify-jwt
+   npx supabase functions deploy create-quote        # customer: cart -> cotización
+   npx supabase functions deploy quote-actions       # customer: pay / cancel a cotización
+   npx supabase functions deploy admin-orders        # admin: list / edit / send / reject / advance
+   npx supabase functions deploy mp-webhook --no-verify-jwt   # MP calls it without a JWT; it validates x-signature instead
    ```
    (`mp-webhook` valida la firma HMAC de MP en lugar de un JWT.)
 

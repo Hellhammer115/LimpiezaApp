@@ -5,7 +5,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "./global.css";
 
-import { AuthProvider } from "@/lib/auth";
+import { AuthProvider } from "@/controllers/useAuth";
 
 SplashScreen.preventAutoHideAsync();
 

@@ -6,10 +6,10 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, View } from "react-n
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { FormInput } from "@/components/FormInput";
-import { PrimaryButton } from "@/components/PrimaryButton";
-import { ScreenHeader } from "@/components/ScreenHeader";
-import { useProfile, useUpdateProfile } from "@/lib/queries";
+import { FormInput } from "@/views/FormInput";
+import { PrimaryButton } from "@/views/PrimaryButton";
+import { ScreenHeader } from "@/views/ScreenHeader";
+import { useProfile, useUpdateProfile } from "@/controllers/useProfile";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Ingresa tu nombre"),
@@ -26,7 +26,7 @@ export default function EditProfile() {
   const { data: profile } = useProfile();
   const updateProfile = useUpdateProfile();
 
-  const { control, handleSubmit, reset } = useForm<FormValues>({
+  const { control, handleSubmit, reset, setError } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", last_name: "", phone: "" },
   });
@@ -49,7 +49,14 @@ export default function EditProfile() {
         phone: values.phone || null,
       });
       router.back();
-    } catch {
+    } catch (error) {
+      // profiles.phone is unique, so another account already holding this
+      // number is the one failure worth naming on the field itself.
+      const code = (error as { code?: string })?.code;
+      if (code === "23505") {
+        setError("phone", { message: "Ese teléfono ya está registrado" });
+        return;
+      }
       Alert.alert("Error", "No se pudo guardar. Intenta de nuevo.");
     }
   });
