@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-LimpiezaApp: a production-targeted grocery/cleaning-products delivery app (Calii-style, Mexico, MXN, Spanish UI) built with Expo SDK 57 + React Native + expo-router + NativeWind, Supabase (Postgres/Auth/Edge Functions) and a quote-first checkout (cotizaciones) paid through Mercado Pago Checkout Pro once an admin sends the quote. Repo work happens on `feature/limpiezaapp-production` (PR #1).
+LimpiezaApp: a production-targeted grocery/cleaning-products delivery app (Calii-style, Mexico, MXN, Spanish UI) built with Expo SDK 57 + React Native + expo-router + NativeWind, Supabase (Postgres/Auth/Edge Functions) and a quote-first checkout (cotizaciones) paid through Mercado Pago Checkout Pro once an admin sends the quote. Repo work happens on `feature/limpiezaapp-production` (open PR #2 against `master`; PR #1 was merged in July).
 
 ## Commands
 
