@@ -6,7 +6,6 @@
 import { z } from "npm:zod@3";
 
 import { getCaller, requireAdmin } from "../_shared/auth.ts";
-import { deliveryFeeCents } from "../_shared/delivery.ts";
 import { escapeHtml, sendEmail } from "../_shared/email.ts";
 import { json } from "../_shared/http.ts";
 
@@ -186,9 +185,10 @@ Deno.serve(async (req) => {
             catalog_price_cents: product.price_cents,
           });
         }
-        const feeCents = deliveryFeeCents(subtotalCents);
         const customerName = [profile.name, profile.last_name].filter(Boolean).join(" ").trim();
 
+        // apply_quote_edit below overwrites delivery_fee_cents/total_cents with
+        // the admin's chosen fee; these are just a placeholder for the insert.
         const { data: order, error: orderError } = await admin
           .from("orders")
           .insert({
@@ -202,8 +202,8 @@ Deno.serve(async (req) => {
             created_by_admin: user.id,
             subtotal_cents: subtotalCents,
             discount_cents: 0,
-            delivery_fee_cents: feeCents,
-            total_cents: subtotalCents + feeCents,
+            delivery_fee_cents: 0,
+            total_cents: subtotalCents,
             customer_name: customerName,
             customer_phone: profile.phone ?? null,
             customer_email: profile.email ?? "",

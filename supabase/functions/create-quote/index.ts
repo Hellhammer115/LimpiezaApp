@@ -7,7 +7,6 @@ import { z } from "npm:zod@3";
 
 import { listAdminEmails } from "../_shared/adminEmails.ts";
 import { getCaller } from "../_shared/auth.ts";
-import { deliveryFeeCents } from "../_shared/delivery.ts";
 import { escapeHtml, sendEmail } from "../_shared/email.ts";
 import { json } from "../_shared/http.ts";
 
@@ -101,9 +100,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const feeCents = deliveryFeeCents(subtotalCents);
     const customerName = [profile?.name, profile?.last_name].filter(Boolean).join(" ").trim();
 
+    // Delivery fee is decided by an admin when they review the quote, not
+    // computed here.
     const { data: order, error: orderError } = await admin
       .from("orders")
       .insert({
@@ -113,8 +113,8 @@ Deno.serve(async (req) => {
         status: "quote_requested",
         subtotal_cents: subtotalCents,
         discount_cents: 0,
-        delivery_fee_cents: feeCents,
-        total_cents: subtotalCents + feeCents,
+        delivery_fee_cents: 0,
+        total_cents: subtotalCents,
         delivery_slot: deliverySlot,
         customer_name: customerName,
         customer_phone: profile?.phone ?? null,

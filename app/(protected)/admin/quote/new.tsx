@@ -7,8 +7,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useCreateQuoteForCustomer, useCustomerLookup } from "@/controllers/useAdminOrders";
-import { useCart, useCartSubtotal } from "@/controllers/useCart";
-import { deliveryFeeCents } from "@/models/delivery";
+import { useCart } from "@/controllers/useCart";
 import type { CustomerMatch } from "@/models/types";
 import { EmptyState } from "@/views/EmptyState";
 import { PrimaryButton } from "@/views/PrimaryButton";
@@ -17,7 +16,6 @@ import { ScreenHeader } from "@/views/ScreenHeader";
 
 export default function AdminNewQuote() {
   const items = useCart((s) => s.items);
-  const subtotal = useCartSubtotal();
   const create = useCreateQuoteForCustomer();
 
   const [query, setQuery] = useState("");
@@ -42,7 +40,7 @@ export default function AdminNewQuote() {
       quantity: i.quantity,
       unit_price_cents: i.priceCents,
     })),
-    deliveryFeeCents: deliveryFeeCents(subtotal),
+    deliveryFeeCents: 0,
     discount: { type: "amount", cents: 0 },
     adminNote: "",
   };

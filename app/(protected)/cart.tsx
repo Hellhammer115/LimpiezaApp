@@ -9,7 +9,6 @@ import { PrimaryButton } from "@/views/PrimaryButton";
 import { QuantityStepper } from "@/views/QuantityStepper";
 import { useIsAdmin } from "@/controllers/useAdmin";
 import { useCart, useCartSubtotal } from "@/controllers/useCart";
-import { deliveryFeeCents } from "@/models/delivery";
 import { formatMXN } from "@/utils/format";
 
 /** VIEW — cart modal: line items, totals, and the door into checkout. */
@@ -19,8 +18,8 @@ export default function Cart() {
   const { data: isAdmin } = useIsAdmin();
 
   const subtotal = useCartSubtotal();
-  const deliveryFee = deliveryFeeCents(subtotal);
-  const total = subtotal + deliveryFee;
+  // The delivery fee isn't known until an admin reviews the quote.
+  const total = subtotal;
 
   return (
     <SafeAreaView className="flex-1 bg-mist" edges={["top", "bottom"]}>
@@ -99,13 +98,7 @@ export default function Cart() {
               <Text className="font-quicksand-medium text-dark-100/60">
                 Envío
               </Text>
-              <Text
-                className={`font-quicksand-semibold ${
-                  deliveryFee === 0 ? "text-primary" : "text-dark-100"
-                }`}
-              >
-                {deliveryFee === 0 ? "Gratis" : formatMXN(deliveryFee)}
-              </Text>
+              <Text className="font-quicksand-semibold text-dark-100">-</Text>
             </View>
             <View className="mt-2 flex-row justify-between border-t border-dark-100/5 pt-2">
               <Text className="font-quicksand-bold text-lg text-dark-100">

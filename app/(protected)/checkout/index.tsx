@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAddresses } from "@/controllers/useAddresses";
 import { useCart, useCartSubtotal } from "@/controllers/useCart";
 import { useCheckout } from "@/controllers/useCheckout";
-import { DELIVERY_SLOTS, deliveryFeeCents } from "@/models/delivery";
+import { DELIVERY_SLOTS } from "@/models/delivery";
 import { formatMXN } from "@/utils/format";
 import { OrderTotals } from "@/views/OrderTotals";
 import { PrimaryButton } from "@/views/PrimaryButton";
@@ -40,8 +40,9 @@ export default function Checkout() {
     : preferredId;
 
   const subtotal = useCartSubtotal();
-  const deliveryFee = deliveryFeeCents(subtotal);
-  const total = subtotal + deliveryFee;
+  // The delivery fee isn't known until an admin reviews the quote, so it's
+  // shown as "-" here and left out of this estimated total.
+  const total = subtotal;
 
   return (
     <SafeAreaView className="flex-1 bg-mist" edges={["top", "bottom"]}>
@@ -133,12 +134,12 @@ export default function Checkout() {
               </Text>
             </View>
           ))}
-          <OrderTotals subtotal={subtotal} discount={0} deliveryFee={deliveryFee} total={total} />
+          <OrderTotals subtotal={subtotal} discount={0} deliveryFee={null} total={total} />
         </View>
 
         <Text className="mt-3 text-center font-quicksand-medium text-xs text-dark-100/50">
-          Un asesor confirmará precios y disponibilidad. Te avisaremos cuando tu
-          cotización esté lista para pagar; el envío mostrado es estimado.
+          Un asesor confirmará precios, envío y disponibilidad. Te avisaremos
+          cuando tu cotización esté lista para pagar.
         </Text>
       </ScrollView>
 

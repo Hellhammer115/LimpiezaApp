@@ -51,7 +51,6 @@ Routing: `app/(auth)` (sign-in/up) and `app/(protected)` (everything else) are g
 - `tailwind.config.js` `content` globs must list every folder that uses `className` (currently `app/` and `views/`). A folder rename silently drops styles (classes like `category-tile` live in `app/global.css` and are tree-shaken by usage).
 - Typed routes (`.expo/types/router.d.ts`) regenerate only when the dev server runs; after adding/renaming routes, `tsc` fails until `npx expo start` has run once.
 - After renaming/moving directories, restart Metro with `--clear` — the running graph keeps stale references and 500s with "Got unexpected undefined".
-- The delivery fee/threshold constants are intentionally duplicated in `models/delivery.ts` (display) and `supabase/functions/_shared/delivery.ts` (authoritative, used by `create-quote`) — change both together.
 - Postgres cannot use a new enum value inside the migration that adds it — `ALTER TYPE … ADD VALUE` goes in its own migration file (see `20260915022643_quotes_enum.sql`).
 - Edge Function shared code lives in `supabase/functions/_shared/` and is imported with relative `../_shared/x.ts` paths; when deploying through the MCP, bundle those files next to the function's `index.ts`.
 - `services/supabase.ts` installs `react-native-url-polyfill`, whose `URLSearchParams` has no `size` getter (`params.size` is `undefined`); test emptiness with `params.toString()`.
