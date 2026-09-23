@@ -85,7 +85,7 @@ export default function CheckoutResult() {
     <Shell>
       <Badge color="primary" icon="checkmark" />
       <Title>¡Pedido confirmado! 🎉</Title>
-      <Subtitle>Tu pedido llegará {order.delivery_slot.toLowerCase()}.</Subtitle>
+      <Subtitle>Tu pedido llegará en el horario de {order.delivery_slot}.</Subtitle>
       <View className="mt-8 w-full gap-2">
         <PrimaryButton title="Ver mi pedido" onPress={() => router.replace(`/order/${order.id}`)} />
         <PrimaryButton title="Seguir comprando" onPress={() => router.replace("/")} />

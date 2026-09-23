@@ -3,11 +3,13 @@
 export const FREE_DELIVERY_THRESHOLD_CENTS = 35000;
 export const DELIVERY_FEE_CENTS = 3900;
 
+// The delivery day is decided by an admin when the quote is sent and the
+// customer pays — these are time-of-day windows only.
 export const DELIVERY_SLOTS = [
-  "Hoy, 6pm – 8pm",
-  "Mañana, 9am – 11am",
-  "Mañana, 12pm – 2pm",
-  "Mañana, 6pm – 8pm",
+  "9am – 12pm",
+  "12pm – 3pm",
+  "3pm – 6pm",
+  "6pm – 9pm",
 ];
 
 export function deliveryFeeCents(subtotalCents: number): number {
