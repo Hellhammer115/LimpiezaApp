@@ -23,10 +23,10 @@ export const isFinal = (status: OrderStatus) =>
 export const canPay = (status: OrderStatus) =>
   status === "quote_sent" || status === "pending";
 
-/** Customer may cancel; admin may reject / edit / send. */
+/** Customer may cancel; admin may reject (both regardless of acceptance, as
+ * long as the quote is still unpaid). */
 export const canCancelQuote = (status: OrderStatus) =>
   status === "quote_requested" || status === "quote_sent";
-export const isQuoteEditable = canCancelQuote;
 
 const FULFILLMENT_NEXT: Partial<Record<OrderStatus, FulfillmentStatus>> = {
   paid: "preparing",
@@ -110,6 +110,19 @@ export const isAdminQuote = (order: Pick<Order, "created_by_admin">) =>
 export const needsAcceptance = (order: Pick<Order, "status" | "created_by_admin" | "address_id">) =>
   order.status === "quote_sent" && order.created_by_admin !== null && order.address_id === null;
 
+/**
+ * The quote's terms are final and only payment remains: an admin-created
+ * quote once the customer picks an address/slot, or any other quote as soon
+ * as an admin sends it (there is no separate accept step for
+ * customer-requested quotes — sending it IS the admin accepting it).
+ */
+export const isQuoteAccepted = (order: Pick<Order, "status" | "created_by_admin" | "address_id">) =>
+  order.status === "quote_sent" && !needsAcceptance(order);
+
+/** Admin may edit only before the quote is accepted — mirrors apply_quote_edit's guard. */
+export const isQuoteEditable = (order: Pick<Order, "status" | "created_by_admin" | "address_id">) =>
+  order.status === "quote_requested" || needsAcceptance(order);
+
 export interface StatusBadge {
   label: string;
   /** [badge background class, badge text class] */
@@ -143,7 +156,7 @@ export function statusBadge(
       highlight: true,
     };
   }
-  if (order.status === "quote_sent" && !needsAcceptance(order)) {
+  if (isQuoteAccepted(order)) {
     return {
       label: "Cotización aceptada",
       style: ["bg-primary/15", "text-primary"],
