@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       // Address ownership is enforced by RLS through the user client.
       userClient
         .from("addresses")
-        .select("label, street, colonia, city, zip")
+        .select("label, street, colonia, city, state, zip")
         .eq("id", addressId)
         .maybeSingle(),
       admin
@@ -65,10 +65,11 @@ Deno.serve(async (req) => {
     const products = productsResult.data;
     const profile = profileResult.data;
 
+    const cityStateZip = [address.city, address.state].filter(Boolean).join(", ");
     const deliveryAddress = [
       `${address.label}: ${address.street}`,
       address.colonia,
-      `${address.city} ${address.zip}`.trim(),
+      `${cityStateZip} ${address.zip}`.trim(),
     ]
       .filter(Boolean)
       .join(", ");

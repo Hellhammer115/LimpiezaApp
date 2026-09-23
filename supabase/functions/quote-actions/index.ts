@@ -129,14 +129,15 @@ Deno.serve(async (req) => {
       }
       const { data: address } = await userClient
         .from("addresses")
-        .select("id, label, street, colonia, city, zip")
+        .select("id, label, street, colonia, city, state, zip")
         .eq("id", body.addressId)
         .maybeSingle();
       if (!address) return json({ error: "Dirección no encontrada" }, 400);
+      const cityStateZip = [address.city, address.state].filter(Boolean).join(", ");
       const deliveryAddress = [
         `${address.label}: ${address.street}`,
         address.colonia,
-        `${address.city} ${address.zip}`.trim(),
+        `${cityStateZip} ${address.zip}`.trim(),
       ]
         .filter(Boolean)
         .join(", ");

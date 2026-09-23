@@ -32,6 +32,7 @@ export interface Address {
   street: string;
   colonia: string;
   city: string;
+  state: string;
   zip: string;
   notes: string | null;
   is_default: boolean;
