@@ -5,17 +5,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { CategoryTile } from "@/views/CategoryTile";
 import { ProductCard } from "@/views/ProductCard";
-import { PromoCarousel } from "@/views/PromoCarousel";
 import { useCartCount } from "@/controllers/useCart";
 import { useCategories, useProducts } from "@/controllers/useCatalog";
 
 const ICON_MUTED = "rgba(16,36,31,0.35)";
 
-/** VIEW — home tab: promos, categories, featured. */
+/** VIEW — home tab: search, categories, featured. */
 export default function Home() {
   const { data: categories } = useCategories();
   const { data: featured } = useProducts({ limit: 6 });
-  // Primitive selector so the screen re-renders only when this changes.
+  // Primitive selector so the screen re-renders only when the count changes.
   const count = useCartCount();
 
   return (
@@ -47,13 +46,8 @@ export default function Home() {
           </Pressable>
         </View>
 
-        {/* Promo carousel */}
-        <View className="mt-5">
-          <PromoCarousel />
-        </View>
-
         {/* Categories */}
-        <Text className="mb-3 mt-7 px-5 font-quicksand-bold text-2xl text-dark-100">
+        <Text className="mb-3 mt-6 px-5 font-quicksand-bold text-2xl text-dark-100">
           Categorías
         </Text>
         <ScrollView
