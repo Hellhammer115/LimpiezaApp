@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 import { computeTotals } from "@/models/orderStatus";
+import { lineBreakdown, lineTotalCents } from "@/models/pricing";
 import type { DiscountInput, OrderWithItems, QuoteEditInput } from "@/models/types";
 import { centsToInput, formatMXN, parseMXNInput } from "@/utils/format";
 import { OrderTotals } from "@/views/OrderTotals";
@@ -14,6 +15,8 @@ export interface QuoteDraft {
     catalog_price_cents: number;
     quantity: number;
     unit_price_cents: number;
+    /** Fixed from the catalog snapshot; the admin edits only the piece price. */
+    dozen_price_cents: number | null;
   }[];
   deliveryFeeCents: number;
   discount: DiscountInput;
@@ -29,6 +32,7 @@ export function draftFromOrder(order: OrderWithItems): QuoteDraft {
       catalog_price_cents: i.catalog_price_cents,
       quantity: i.quantity,
       unit_price_cents: i.unit_price_cents,
+      dozen_price_cents: i.dozen_price_cents,
     })),
     deliveryFeeCents: order.delivery_fee_cents,
     discount:
@@ -74,7 +78,11 @@ export function QuoteEditor({ draft, onChange }: Props) {
   // Every item change goes through here so an amount discount is re-capped
   // to the new subtotal: apply_quote_edit rejects a discount larger than it.
   const withItems = (items: QuoteDraft["items"]): QuoteDraft => {
-    const nextSubtotal = items.reduce((sum, i) => sum + i.quantity * i.unit_price_cents, 0);
+    const nextSubtotal = computeTotals({
+      items,
+      discount: { type: "amount", cents: 0 },
+      deliveryFeeCents: 0,
+    }).subtotal;
     const discount: DiscountInput =
       draft.discount.type === "amount"
         ? { type: "amount", cents: Math.min(draft.discount.cents, nextSubtotal) }
@@ -115,12 +123,22 @@ export function QuoteEditor({ draft, onChange }: Props) {
                 />
                 <Text className="mt-0.5 font-quicksand-medium text-[11px] text-dark-100/50">
                   Catálogo: {formatMXN(item.catalog_price_cents)}
+                  {item.dozen_price_cents != null
+                    ? ` · Mayoreo: ${formatMXN(item.dozen_price_cents)}/docena`
+                    : ""}
                 </Text>
               </View>
               <Text className="min-w-[72px] text-right font-quicksand-semibold text-sm text-dark-100">
-                {formatMXN(item.quantity * item.unit_price_cents)}
+                {formatMXN(
+                  lineTotalCents(item.quantity, item.unit_price_cents, item.dozen_price_cents)
+                )}
               </Text>
             </View>
+            {lineBreakdown(item.quantity, item.unit_price_cents, item.dozen_price_cents) ? (
+              <Text className="mt-1 font-quicksand-medium text-[11px] text-tide">
+                {lineBreakdown(item.quantity, item.unit_price_cents, item.dozen_price_cents)}
+              </Text>
+            ) : null}
           </View>
         ))}
 

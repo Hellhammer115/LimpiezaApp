@@ -39,6 +39,7 @@ export default function AdminNewQuote() {
       catalog_price_cents: i.priceCents,
       quantity: i.quantity,
       unit_price_cents: i.priceCents,
+      dozen_price_cents: i.dozenPriceCents ?? null,
     })),
     deliveryFeeCents: 0,
     discount: { type: "amount", cents: 0 },

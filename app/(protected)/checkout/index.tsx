@@ -5,7 +5,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAddresses } from "@/controllers/useAddresses";
-import { useCart, useCartSubtotal } from "@/controllers/useCart";
+import { cartLineCents, useCart, useCartSubtotal } from "@/controllers/useCart";
 import { useCheckout } from "@/controllers/useCheckout";
 import { DELIVERY_SLOTS } from "@/models/delivery";
 import { formatMXN } from "@/utils/format";
@@ -130,7 +130,7 @@ export default function Checkout() {
                 {item.quantity}× {item.name}
               </Text>
               <Text className="font-quicksand-semibold text-sm text-dark-100">
-                {formatMXN(item.priceCents * item.quantity)}
+                {formatMXN(cartLineCents(item))}
               </Text>
             </View>
           ))}

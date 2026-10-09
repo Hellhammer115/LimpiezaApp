@@ -21,6 +21,11 @@ export function ProductCard({ product }: { product: Product }) {
       className="mb-3 flex-1 rounded-2xl bg-white p-3"
     >
       <View className="h-28 items-center justify-center rounded-xl bg-foam">
+        {product.dozen_price_cents != null ? (
+          <View className="absolute left-1.5 top-1.5 z-10 rounded-full bg-tide px-2 py-0.5">
+            <Text className="font-quicksand-bold text-[10px] text-white">Mayoreo</Text>
+          </View>
+        ) : null}
         {product.image_url ? (
           <Image
             source={{ uri: product.image_url }}
@@ -40,7 +45,9 @@ export function ProductCard({ product }: { product: Product }) {
         {product.name}
       </Text>
       <Text className="mt-0.5 font-quicksand-medium text-xs text-dark-100/50">
-        {product.unit}
+        {product.dozen_price_cents != null
+          ? `Docena: ${formatMXN(product.dozen_price_cents)}`
+          : product.unit}
       </Text>
 
       <View className="mt-2 flex-row items-center justify-between">

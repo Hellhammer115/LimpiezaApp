@@ -1,6 +1,7 @@
 // MODEL — order-status domain rules: display labels, badge styles, state
 // predicates and the single money formula shared by every screen that
 // renders or edits an order/cotización.
+import { lineTotalCents } from "@/models/pricing";
 import { hasPendingQuoteUpdate } from "@/models/quoteRevision";
 import type {
   DiscountInput,
@@ -53,12 +54,12 @@ export interface Totals {
  * editor; the server result is authoritative.
  */
 export function computeTotals(input: {
-  items: { quantity: number; unit_price_cents: number }[];
+  items: { quantity: number; unit_price_cents: number; dozen_price_cents?: number | null }[];
   discount: DiscountInput;
   deliveryFeeCents: number;
 }): Totals {
   const subtotal = input.items.reduce(
-    (sum, i) => sum + i.quantity * i.unit_price_cents,
+    (sum, i) => sum + lineTotalCents(i.quantity, i.unit_price_cents, i.dozen_price_cents),
     0
   );
   const discount =

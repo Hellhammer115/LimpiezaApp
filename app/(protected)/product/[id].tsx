@@ -47,6 +47,11 @@ export default function ProductScreen() {
         </View>
 
         <View className="px-5 pt-5">
+          {product.brand ? (
+            <Text className="font-quicksand-semibold text-sm uppercase text-dark-100/50">
+              {product.brand}
+            </Text>
+          ) : null}
           <Text className="font-quicksand-bold text-2xl text-dark-100">
             {product.name}
           </Text>
@@ -56,6 +61,18 @@ export default function ProductScreen() {
           <Text className="mt-3 font-quicksand-bold text-3xl text-primary">
             {formatMXN(product.price_cents)}
           </Text>
+
+          {product.dozen_price_cents != null ? (
+            <View className="mt-4 rounded-2xl bg-tide/10 p-4">
+              <Text className="font-quicksand-bold text-tide">
+                Mayoreo: {formatMXN(product.dozen_price_cents)} por docena
+              </Text>
+              <Text className="mt-1 font-quicksand-medium text-sm text-dark-100/70">
+                Cada 12 piezas se cobran a precio de mayoreo; las piezas restantes, a precio
+                normal.
+              </Text>
+            </View>
+          ) : null}
 
           {product.description ? (
             <>

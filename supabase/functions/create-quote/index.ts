@@ -9,6 +9,7 @@ import { listAdminEmails } from "../_shared/adminEmails.ts";
 import { getCaller } from "../_shared/auth.ts";
 import { escapeHtml, sendEmail } from "../_shared/email.ts";
 import { json } from "../_shared/http.ts";
+import { lineTotalCents } from "../_shared/pricing.ts";
 
 const quoteSchema = z.object({
   addressId: z.string().uuid(),
@@ -50,7 +51,7 @@ Deno.serve(async (req) => {
         .maybeSingle(),
       admin
         .from("products")
-        .select("id, name, price_cents, stock, is_active")
+        .select("id, name, price_cents, dozen_price_cents, stock, is_active")
         .in("id", productIds),
       admin
         .from("profiles")
@@ -80,6 +81,7 @@ Deno.serve(async (req) => {
       quantity: number;
       unit_price_cents: number;
       catalog_price_cents: number;
+      dozen_price_cents: number | null;
     }[] = [];
 
     for (const item of items) {
@@ -90,13 +92,14 @@ Deno.serve(async (req) => {
       if (product.stock < item.quantity) {
         return json({ error: `Sin existencias: ${product.name}` }, 409);
       }
-      subtotalCents += product.price_cents * item.quantity;
+      subtotalCents += lineTotalCents(item.quantity, product.price_cents, product.dozen_price_cents);
       orderItems.push({
         product_id: product.id,
         name: product.name,
         quantity: item.quantity,
         unit_price_cents: product.price_cents,
         catalog_price_cents: product.price_cents,
+        dozen_price_cents: product.dozen_price_cents,
       });
     }
 

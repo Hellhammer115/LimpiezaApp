@@ -21,6 +21,12 @@ const productInput = z.object({
   image_url: z.string().url().nullable(),
   stock: z.number().int().min(0),
   is_active: z.boolean(),
+  sku: z.string().trim().min(1).max(50).nullable(),
+  sat_key: z.string().trim().min(1).max(20).nullable(),
+  brand: z.string().trim().min(1).max(100).nullable(),
+  code: z.string().trim().min(1).max(100).nullable(),
+  pieces_per_box: z.number().int().min(1).nullable(),
+  dozen_price_cents: z.number().int().min(0).nullable(),
 });
 
 const patchInput = productInput.partial().extend({ id: z.string().uuid() });
@@ -87,6 +93,7 @@ Deno.serve(async (req) => {
         })
         .select("*")
         .single();
+      if (error?.code === "23505") return json({ error: "Ya existe un producto con esa clave" }, 409);
       if (error) throw error;
       return json({ ...data, updated_by_email: user.email ?? null });
     }
@@ -101,6 +108,7 @@ Deno.serve(async (req) => {
         .eq("id", id)
         .select("*")
         .single();
+      if (error?.code === "23505") return json({ error: "Ya existe un producto con esa clave" }, 409);
       if (error) throw error;
       return json({ ...data, updated_by_email: user.email ?? null });
     }

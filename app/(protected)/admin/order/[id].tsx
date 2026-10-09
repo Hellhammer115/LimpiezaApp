@@ -33,6 +33,7 @@ import {
   isQuoteEditable,
   nextFulfillmentStatus,
 } from "@/models/orderStatus";
+import { lineTotalCents } from "@/models/pricing";
 import type { OrderWithItems } from "@/models/types";
 import { formatDate, formatMXN } from "@/utils/format";
 import { OrderTotals } from "@/views/OrderTotals";
@@ -198,7 +199,7 @@ function Loaded({ order }: { order: OrderWithItems }) {
                       {item.quantity}× {item.name}
                     </Text>
                     <Text className="font-quicksand-semibold text-sm text-dark-100">
-                      {formatMXN(item.unit_price_cents * item.quantity)}
+                      {formatMXN(lineTotalCents(item.quantity, item.unit_price_cents, item.dozen_price_cents))}
                     </Text>
                   </View>
                 ))}

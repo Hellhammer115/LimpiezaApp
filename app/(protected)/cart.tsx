@@ -8,7 +8,8 @@ import { EmptyState } from "@/views/EmptyState";
 import { PrimaryButton } from "@/views/PrimaryButton";
 import { QuantityStepper } from "@/views/QuantityStepper";
 import { useIsAdmin } from "@/controllers/useAdmin";
-import { useCart, useCartSubtotal } from "@/controllers/useCart";
+import { cartLineCents, useCart, useCartSubtotal } from "@/controllers/useCart";
+import { lineBreakdown } from "@/models/pricing";
 import { formatMXN } from "@/utils/format";
 
 /** VIEW — cart modal: line items, totals, and the door into checkout. */
@@ -71,8 +72,14 @@ export default function Cart() {
                   <Text className="mt-0.5 font-quicksand-medium text-xs text-dark-100/50">
                     {formatMXN(item.priceCents)} · {item.unit}
                   </Text>
+                  {item.dozenPriceCents != null ? (
+                    <Text className="mt-0.5 font-quicksand-semibold text-xs text-tide">
+                      {lineBreakdown(item.quantity, item.priceCents, item.dozenPriceCents) ??
+                        `Mayoreo: ${formatMXN(item.dozenPriceCents)} por docena`}
+                    </Text>
+                  ) : null}
                   <Text className="mt-1 font-quicksand-bold text-dark-100">
-                    {formatMXN(item.priceCents * item.quantity)}
+                    {formatMXN(cartLineCents(item))}
                   </Text>
                 </View>
                 <View className="items-end gap-2">

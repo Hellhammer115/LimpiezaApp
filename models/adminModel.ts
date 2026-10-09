@@ -58,6 +58,12 @@ export interface ProductInput {
   image_url: string | null;
   stock: number;
   is_active: boolean;
+  sku: string | null;
+  sat_key: string | null;
+  brand: string | null;
+  code: string | null;
+  pieces_per_box: number | null;
+  dozen_price_cents: number | null;
 }
 
 /** Creates a new product. */

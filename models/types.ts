@@ -54,11 +54,22 @@ export interface Product {
   category_id: string;
   name: string;
   description: string;
+  /** Precio por pieza. */
   price_cents: number;
+  /** Precio por docena. */
+  dozen_price_cents: number | null;
   unit: string;
   image_url: string | null;
   stock: number;
   is_active: boolean;
+  /** Clave (internal product key; the spreadsheet import matches on it). */
+  sku: string | null;
+  /** Clave SAT (ClaveProdServ for invoicing). */
+  sat_key: string | null;
+  brand: string | null;
+  /** Código (supplier code; numeric or text — kept alongside Clave). */
+  code: string | null;
+  pieces_per_box: number | null;
   created_at: string;
   updated_at: string;
   updated_by: string | null;
@@ -117,6 +128,8 @@ export interface OrderItem {
   unit_price_cents: number;
   /** Catalog price when the quote was requested. */
   catalog_price_cents: number;
+  /** Catalog dozen (mayoreo) price when the quote was requested; null = none. */
+  dozen_price_cents: number | null;
 }
 
 /** A past version of a quote, as stored by the quote_snapshot SQL function. */
@@ -127,6 +140,8 @@ export interface QuoteSnapshot {
     name: string;
     quantity: number;
     unit_price_cents: number;
+    /** Absent in snapshots taken before dozen pricing existed. */
+    dozen_price_cents?: number | null;
   }[];
   subtotal_cents: number;
   discount_cents: number;

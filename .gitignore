@@ -60,3 +60,6 @@ supabase/.temp/
 
 # subagent-driven-development scratch (ledger, briefs, review packages)
 .superpowers/
+
+# product spreadsheets for catalog imports (never committed)
+data/

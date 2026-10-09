@@ -17,6 +17,7 @@ import {
   isQuote,
   needsAcceptance,
 } from "@/models/orderStatus";
+import { lineBreakdown, lineTotalCents } from "@/models/pricing";
 import { diffQuote, hasPendingQuoteUpdate, hasQuoteRevision } from "@/models/quoteRevision";
 import { formatDate, formatMXN } from "@/utils/format";
 import { OrderTotals } from "@/views/OrderTotals";
@@ -117,16 +118,23 @@ export default function OrderDetail() {
         </Text>
         <View className="rounded-2xl bg-white p-4">
           {order.order_items.map((item) => (
-            <View key={item.id} className="mb-2 flex-row items-center justify-between">
-              {diff?.changedItemIds.has(item.id) ? (
-                <View className="mr-2 h-2 w-2 rounded-full bg-tide" />
+            <View key={item.id} className="mb-2">
+              <View className="flex-row items-center justify-between">
+                {diff?.changedItemIds.has(item.id) ? (
+                  <View className="mr-2 h-2 w-2 rounded-full bg-tide" />
+                ) : null}
+                <Text numberOfLines={1} className="flex-1 pr-3 font-quicksand-medium text-sm text-dark-100/80">
+                  {item.quantity}× {item.name}
+                </Text>
+                <Text className="font-quicksand-semibold text-sm text-dark-100">
+                  {formatMXN(lineTotalCents(item.quantity, item.unit_price_cents, item.dozen_price_cents))}
+                </Text>
+              </View>
+              {lineBreakdown(item.quantity, item.unit_price_cents, item.dozen_price_cents) ? (
+                <Text className="font-quicksand-medium text-xs text-tide">
+                  Mayoreo: {lineBreakdown(item.quantity, item.unit_price_cents, item.dozen_price_cents)}
+                </Text>
               ) : null}
-              <Text numberOfLines={1} className="flex-1 pr-3 font-quicksand-medium text-sm text-dark-100/80">
-                {item.quantity}× {item.name}
-              </Text>
-              <Text className="font-quicksand-semibold text-sm text-dark-100">
-                {formatMXN(item.unit_price_cents * item.quantity)}
-              </Text>
             </View>
           ))}
           <OrderTotals
