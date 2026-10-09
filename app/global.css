@@ -158,7 +158,7 @@
     }
 
     .category-tile {
-        @apply w-28 h-36 rounded-2xl mr-3 p-3 justify-between;
+        @apply aspect-square w-full rounded-3xl items-center justify-center overflow-hidden;
     }
 
     .tab-bar {
