@@ -26,12 +26,14 @@ import {
 import { useOrder } from "@/controllers/useOrders";
 import { useQuotePdf } from "@/controllers/useQuotePdf";
 import {
+  canCancelQuote,
   canDeleteQuote,
   FULFILLMENT_LABELS,
   isQuote,
   isQuoteEditable,
   nextFulfillmentStatus,
 } from "@/models/orderStatus";
+import { lineTotalCents } from "@/models/pricing";
 import type { OrderWithItems } from "@/models/types";
 import { formatDate, formatMXN } from "@/utils/format";
 import { OrderTotals } from "@/views/OrderTotals";
@@ -62,7 +64,9 @@ function Loaded({ order }: { order: OrderWithItems }) {
   const remove = useAdminDeleteQuote();
   const pdf = useQuotePdf();
 
-  const editable = isQuoteEditable(order.status);
+  const editable = isQuoteEditable(order);
+  // Accepted but still unpaid: no more edits, but the admin can still reject it.
+  const rejectableOnly = !editable && canCancelQuote(order.status);
   // Only the admin's unsaved edits are stored; while there are none the draft
   // is derived from the server row, so a save or another admin's edit shows
   // up without an effect resyncing state (react-hooks/set-state-in-effect).
@@ -169,12 +173,18 @@ function Loaded({ order }: { order: OrderWithItems }) {
             <Text className="font-quicksand-medium text-sm text-dark-100/60">{order.customer_phone}</Text>
           ) : null}
           <Text className="mt-3 font-quicksand-bold text-dark-100">
-            {order.delivery_slot || "Por definir"}
+            Hora preferida de entrega: {order.delivery_slot || "Por definir"}
           </Text>
           <Text className="mt-1 font-quicksand-medium text-sm text-dark-100/60">
             {order.delivery_address || "Por definir"}
           </Text>
         </View>
+
+        {rejectableOnly ? (
+          <Text className="mt-3 px-1 font-quicksand-medium text-sm text-dark-100/60">
+            Pago pendiente del usuario.
+          </Text>
+        ) : null}
 
         <View className="mt-6">
           {editable ? (
@@ -189,7 +199,7 @@ function Loaded({ order }: { order: OrderWithItems }) {
                       {item.quantity}× {item.name}
                     </Text>
                     <Text className="font-quicksand-semibold text-sm text-dark-100">
-                      {formatMXN(item.unit_price_cents * item.quantity)}
+                      {formatMXN(lineTotalCents(item.quantity, item.unit_price_cents, item.dozen_price_cents))}
                     </Text>
                   </View>
                 ))}
@@ -223,6 +233,12 @@ function Loaded({ order }: { order: OrderWithItems }) {
           />
           <Pressable onPress={rejectQuote} disabled={busy} className="items-center py-2">
             <Text className="font-quicksand-bold text-sm text-coral">Rechazar</Text>
+          </Pressable>
+        </View>
+      ) : rejectableOnly ? (
+        <View className="border-t border-dark-100/5 bg-white px-5 pb-4 pt-3">
+          <Pressable onPress={rejectQuote} disabled={busy} className="items-center py-2">
+            <Text className="font-quicksand-bold text-sm text-coral">Rechazar cotización</Text>
           </Pressable>
         </View>
       ) : next ? (

@@ -6,7 +6,8 @@ interface Props {
   subtotal: number;
   discount: number;
   discountPercent?: number | null;
-  deliveryFee: number;
+  /** null while the fee hasn't been set by an admin yet — shown as "-". */
+  deliveryFee: number | null;
   total: number;
 }
 
@@ -22,7 +23,10 @@ export function OrderTotals({ subtotal, discount, discountPercent, deliveryFee, 
           accent
         />
       ) : null}
-      <Row label="Envío" value={deliveryFee === 0 ? "Gratis" : formatMXN(deliveryFee)} />
+      <Row
+        label="Envío"
+        value={deliveryFee === null ? "-" : deliveryFee === 0 ? "Gratis" : formatMXN(deliveryFee)}
+      />
       <View className="mt-1 flex-row justify-between">
         <Text className="font-quicksand-bold text-base text-dark-100">Total</Text>
         <Text className="font-quicksand-bold text-base text-dark-100">{formatMXN(total)}</Text>

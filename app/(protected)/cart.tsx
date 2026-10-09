@@ -8,8 +8,8 @@ import { EmptyState } from "@/views/EmptyState";
 import { PrimaryButton } from "@/views/PrimaryButton";
 import { QuantityStepper } from "@/views/QuantityStepper";
 import { useIsAdmin } from "@/controllers/useAdmin";
-import { useCart, useCartSubtotal } from "@/controllers/useCart";
-import { deliveryFeeCents } from "@/models/delivery";
+import { cartLineCents, useCart, useCartSubtotal } from "@/controllers/useCart";
+import { lineBreakdown } from "@/models/pricing";
 import { formatMXN } from "@/utils/format";
 
 /** VIEW — cart modal: line items, totals, and the door into checkout. */
@@ -19,8 +19,8 @@ export default function Cart() {
   const { data: isAdmin } = useIsAdmin();
 
   const subtotal = useCartSubtotal();
-  const deliveryFee = deliveryFeeCents(subtotal);
-  const total = subtotal + deliveryFee;
+  // The delivery fee isn't known until an admin reviews the quote.
+  const total = subtotal;
 
   return (
     <SafeAreaView className="flex-1 bg-mist" edges={["top", "bottom"]}>
@@ -72,8 +72,14 @@ export default function Cart() {
                   <Text className="mt-0.5 font-quicksand-medium text-xs text-dark-100/50">
                     {formatMXN(item.priceCents)} · {item.unit}
                   </Text>
+                  {item.dozenPriceCents != null ? (
+                    <Text className="mt-0.5 font-quicksand-semibold text-xs text-tide">
+                      {lineBreakdown(item.quantity, item.priceCents, item.dozenPriceCents) ??
+                        `Mayoreo: ${formatMXN(item.dozenPriceCents)} por docena`}
+                    </Text>
+                  ) : null}
                   <Text className="mt-1 font-quicksand-bold text-dark-100">
-                    {formatMXN(item.priceCents * item.quantity)}
+                    {formatMXN(cartLineCents(item))}
                   </Text>
                 </View>
                 <View className="items-end gap-2">
@@ -99,13 +105,7 @@ export default function Cart() {
               <Text className="font-quicksand-medium text-dark-100/60">
                 Envío
               </Text>
-              <Text
-                className={`font-quicksand-semibold ${
-                  deliveryFee === 0 ? "text-primary" : "text-dark-100"
-                }`}
-              >
-                {deliveryFee === 0 ? "Gratis" : formatMXN(deliveryFee)}
-              </Text>
+              <Text className="font-quicksand-semibold text-dark-100">-</Text>
             </View>
             <View className="mt-2 flex-row justify-between border-t border-dark-100/5 pt-2">
               <Text className="font-quicksand-bold text-lg text-dark-100">

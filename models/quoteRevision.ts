@@ -25,11 +25,17 @@ export const hasPendingQuoteUpdate = (order: RevisionFields) =>
 
 export type LineChange = "added" | "removed" | "changed" | "same";
 
+export interface LinePrice {
+  quantity: number;
+  unit_price_cents: number;
+  dozen_price_cents: number | null;
+}
+
 export interface LineDiff {
   key: string;
   name: string;
-  before: { quantity: number; unit_price_cents: number } | null;
-  after: { quantity: number; unit_price_cents: number } | null;
+  before: LinePrice | null;
+  after: LinePrice | null;
   change: LineChange;
 }
 
@@ -52,12 +58,20 @@ export function diffQuote(previous: QuoteSnapshot, current: OrderWithItems): Quo
 
   for (const old of previous.items) {
     const now = currentById.get(old.id);
-    const before = { quantity: old.quantity, unit_price_cents: old.unit_price_cents };
+    const before = {
+      quantity: old.quantity,
+      unit_price_cents: old.unit_price_cents,
+      dozen_price_cents: old.dozen_price_cents ?? null,
+    };
     if (!now) {
       lines.push({ key: old.id, name: old.name, before, after: null, change: "removed" });
       continue;
     }
-    const after = { quantity: now.quantity, unit_price_cents: now.unit_price_cents };
+    const after = {
+      quantity: now.quantity,
+      unit_price_cents: now.unit_price_cents,
+      dozen_price_cents: now.dozen_price_cents,
+    };
     const changed =
       before.quantity !== after.quantity || before.unit_price_cents !== after.unit_price_cents;
     if (changed) changedItemIds.add(now.id);
@@ -70,7 +84,11 @@ export function diffQuote(previous: QuoteSnapshot, current: OrderWithItems): Quo
       key: item.id,
       name: item.name,
       before: null,
-      after: { quantity: item.quantity, unit_price_cents: item.unit_price_cents },
+      after: {
+        quantity: item.quantity,
+        unit_price_cents: item.unit_price_cents,
+        dozen_price_cents: item.dozen_price_cents,
+      },
       change: "added",
     });
   }

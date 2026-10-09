@@ -6,12 +6,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import { lineTotalCents } from "@/models/pricing";
 import type { Product } from "@/models/types";
 
 export interface CartItem {
   productId: string;
   name: string;
   priceCents: number;
+  /** Mayoreo price per dozen; absent in carts persisted before it existed. */
+  dozenPriceCents?: number | null;
   unit: string;
   imageUrl: string | null;
   quantity: number;
@@ -55,6 +58,7 @@ export const cartStore = create<CartState>()(
                 productId: product.id,
                 name: product.name,
                 priceCents: product.price_cents,
+                dozenPriceCents: product.dozen_price_cents,
                 unit: product.unit,
                 imageUrl: product.image_url,
                 quantity,
@@ -97,9 +101,13 @@ export const cartStore = create<CartState>()(
   )
 );
 
+/** Line total in integer cents, with mayoreo applied per complete dozen. */
+export const cartLineCents = (i: CartItem) =>
+  lineTotalCents(i.quantity, i.priceCents, i.dozenPriceCents);
+
 /** Sum of line totals in integer cents. */
 export const cartSubtotalCents = (items: CartItem[]) =>
-  items.reduce((sum, i) => sum + i.priceCents * i.quantity, 0);
+  items.reduce((sum, i) => sum + cartLineCents(i), 0);
 
 /** Total number of units across all lines (the cart badge number). */
 export const cartCount = (items: CartItem[]) =>

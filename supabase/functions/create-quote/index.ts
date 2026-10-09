@@ -7,9 +7,9 @@ import { z } from "npm:zod@3";
 
 import { listAdminEmails } from "../_shared/adminEmails.ts";
 import { getCaller } from "../_shared/auth.ts";
-import { deliveryFeeCents } from "../_shared/delivery.ts";
 import { escapeHtml, sendEmail } from "../_shared/email.ts";
 import { json } from "../_shared/http.ts";
+import { lineTotalCents } from "../_shared/pricing.ts";
 
 const quoteSchema = z.object({
   addressId: z.string().uuid(),
@@ -46,12 +46,12 @@ Deno.serve(async (req) => {
       // Address ownership is enforced by RLS through the user client.
       userClient
         .from("addresses")
-        .select("label, street, colonia, city, zip")
+        .select("label, street, colonia, city, state, zip")
         .eq("id", addressId)
         .maybeSingle(),
       admin
         .from("products")
-        .select("id, name, price_cents, stock, is_active")
+        .select("id, name, price_cents, dozen_price_cents, stock, is_active")
         .in("id", productIds),
       admin
         .from("profiles")
@@ -65,10 +65,11 @@ Deno.serve(async (req) => {
     const products = productsResult.data;
     const profile = profileResult.data;
 
+    const cityStateZip = [address.city, address.state].filter(Boolean).join(", ");
     const deliveryAddress = [
       `${address.label}: ${address.street}`,
       address.colonia,
-      `${address.city} ${address.zip}`.trim(),
+      `${cityStateZip} ${address.zip}`.trim(),
     ]
       .filter(Boolean)
       .join(", ");
@@ -80,6 +81,7 @@ Deno.serve(async (req) => {
       quantity: number;
       unit_price_cents: number;
       catalog_price_cents: number;
+      dozen_price_cents: number | null;
     }[] = [];
 
     for (const item of items) {
@@ -90,19 +92,21 @@ Deno.serve(async (req) => {
       if (product.stock < item.quantity) {
         return json({ error: `Sin existencias: ${product.name}` }, 409);
       }
-      subtotalCents += product.price_cents * item.quantity;
+      subtotalCents += lineTotalCents(item.quantity, product.price_cents, product.dozen_price_cents);
       orderItems.push({
         product_id: product.id,
         name: product.name,
         quantity: item.quantity,
         unit_price_cents: product.price_cents,
         catalog_price_cents: product.price_cents,
+        dozen_price_cents: product.dozen_price_cents,
       });
     }
 
-    const feeCents = deliveryFeeCents(subtotalCents);
     const customerName = [profile?.name, profile?.last_name].filter(Boolean).join(" ").trim();
 
+    // Delivery fee is decided by an admin when they review the quote, not
+    // computed here.
     const { data: order, error: orderError } = await admin
       .from("orders")
       .insert({
@@ -112,8 +116,8 @@ Deno.serve(async (req) => {
         status: "quote_requested",
         subtotal_cents: subtotalCents,
         discount_cents: 0,
-        delivery_fee_cents: feeCents,
-        total_cents: subtotalCents + feeCents,
+        delivery_fee_cents: 0,
+        total_cents: subtotalCents,
         delivery_slot: deliverySlot,
         customer_name: customerName,
         customer_phone: profile?.phone ?? null,

@@ -2,6 +2,7 @@
 // export. No React Native imports; inline CSS only (expo-print renders it in
 // a WebView). Money is formatted here from integer cents.
 import { statusBadge } from "@/models/orderStatus";
+import { lineBreakdown, lineTotalCents } from "@/models/pricing";
 import type { OrderWithItems } from "@/models/types";
 import { formatDate, formatMXN } from "@/utils/format";
 
@@ -13,6 +14,11 @@ function esc(value: string): string {
     .replaceAll('"', "&quot;");
 }
 
+function breakdown(i: OrderWithItems["order_items"][number]): string {
+  const text = lineBreakdown(i.quantity, i.unit_price_cents, i.dozen_price_cents);
+  return text ? `<br><small>Mayoreo: ${esc(text)}</small>` : "";
+}
+
 /** Builds the printable HTML for a cotización / pedido. */
 export function buildQuoteHtml(order: OrderWithItems): string {
   const folio = order.id.slice(0, 8).toUpperCase();
@@ -21,9 +27,9 @@ export function buildQuoteHtml(order: OrderWithItems): string {
     .map(
       (i) => `<tr>
   <td class="qty">${i.quantity}</td>
-  <td>${esc(i.name)}</td>
+  <td>${esc(i.name)}${breakdown(i)}</td>
   <td class="num">${formatMXN(i.unit_price_cents)}</td>
-  <td class="num">${formatMXN(i.unit_price_cents * i.quantity)}</td>
+  <td class="num">${formatMXN(lineTotalCents(i.quantity, i.unit_price_cents, i.dozen_price_cents))}</td>
 </tr>`
     )
     .join("");

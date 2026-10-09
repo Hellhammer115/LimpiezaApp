@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 
-import type { LineDiff, QuoteDiff } from "@/models/quoteRevision";
+import { lineTotalCents } from "@/models/pricing";
+import type { LineDiff, LinePrice, QuoteDiff } from "@/models/quoteRevision";
 import type { OrderWithItems, QuoteSnapshot } from "@/models/types";
 import { formatDate, formatMXN } from "@/utils/format";
 import { OrderTotals } from "@/views/OrderTotals";
@@ -122,6 +123,9 @@ export function QuoteChanges({ previous, order, diff, pending }: ChangesProps) {
   );
 }
 
+const linePrice = (l: LinePrice) =>
+  lineTotalCents(l.quantity, l.unit_price_cents, l.dozen_price_cents);
+
 function LineDetail({ line }: { line: LineDiff }) {
   const { before, after } = line;
   if (before && after) {
@@ -138,8 +142,7 @@ function LineDetail({ line }: { line: LineDiff }) {
           </Text>
         ) : null}
         <Text className="font-quicksand-medium text-xs text-dark-100/60">
-          Importe: {formatMXN(before.quantity * before.unit_price_cents)} →{" "}
-          {formatMXN(after.quantity * after.unit_price_cents)}
+          Importe: {formatMXN(linePrice(before))} → {formatMXN(linePrice(after))}
         </Text>
       </View>
     );
@@ -147,7 +150,7 @@ function LineDetail({ line }: { line: LineDiff }) {
   const only = before ?? after!;
   return (
     <Text className="mt-1 font-quicksand-medium text-xs text-dark-100/60">
-      {only.quantity}× {formatMXN(only.unit_price_cents)} = {formatMXN(only.quantity * only.unit_price_cents)}
+      {only.quantity}× {formatMXN(only.unit_price_cents)} = {formatMXN(linePrice(only))}
     </Text>
   );
 }
@@ -182,7 +185,7 @@ export function PreviousQuote({ previous }: { previous: QuoteSnapshot }) {
               {item.quantity}× {item.name}
             </Text>
             <Text className="font-quicksand-semibold text-sm text-dark-100/70">
-              {formatMXN(item.unit_price_cents * item.quantity)}
+              {formatMXN(lineTotalCents(item.quantity, item.unit_price_cents, item.dozen_price_cents))}
             </Text>
           </View>
         ))}

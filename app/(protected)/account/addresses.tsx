@@ -30,6 +30,7 @@ const schema = z.object({
   street: z.string().trim().min(1, "Calle y número"),
   colonia: z.string().trim(),
   city: z.string().trim().min(1, "Ciudad"),
+  state: z.string().trim().min(1, "Estado"),
   zip: z.string().trim().regex(/^\d{5}$/, "C.P. a 5 dígitos"),
   notes: z.string().trim(),
 });
@@ -41,6 +42,7 @@ const EMPTY: FormValues = {
   street: "",
   colonia: "",
   city: "",
+  state: "",
   zip: "",
   notes: "",
 };
@@ -66,6 +68,7 @@ export default function Addresses() {
             street: address.street,
             colonia: address.colonia,
             city: address.city,
+            state: address.state,
             zip: address.zip,
             notes: address.notes ?? "",
           }
@@ -147,7 +150,8 @@ export default function Addresses() {
                 {address.colonia ? `, ${address.colonia}` : ""}
               </Text>
               <Text className="font-quicksand-medium text-sm text-dark-100/70">
-                {address.city} {address.zip}
+                {address.city}
+                {address.state ? `, ${address.state}` : ""} {address.zip}
               </Text>
               {!address.is_default ? (
                 <Pressable onPress={() => setDefault(address)} className="mt-2">
@@ -176,6 +180,7 @@ export default function Addresses() {
               <FormInput control={control} name="street" label="Calle y número" placeholder="Av. Siempre Viva 742" />
               <FormInput control={control} name="colonia" label="Colonia" placeholder="Centro" />
               <FormInput control={control} name="city" label="Ciudad" placeholder="Guadalajara" />
+              <FormInput control={control} name="state" label="Estado" placeholder="Jalisco" />
               <FormInput control={control} name="zip" label="Código postal" placeholder="44100" keyboardType="number-pad" />
               <FormInput control={control} name="notes" label="Referencias (opcional)" placeholder="Portón negro" />
               <View className="mt-2 gap-2">

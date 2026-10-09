@@ -3,12 +3,14 @@
 // re-renders only the views that depend on the changed value.
 import {
   cartCount,
+  cartLineCents,
   cartStore,
   cartSubtotalCents,
   type CartItem,
 } from "@/models/cartStore";
 
 export type { CartItem };
+export { cartLineCents };
 
 /** Subscribe to an arbitrary slice of the cart (same API as zustand). */
 export const useCart = cartStore;

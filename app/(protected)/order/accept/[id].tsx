@@ -11,6 +11,7 @@ import { useOrder } from "@/controllers/useOrders";
 import { useAcceptQuote, usePayQuote } from "@/controllers/useQuote";
 import { DELIVERY_SLOTS } from "@/models/delivery";
 import { needsAcceptance } from "@/models/orderStatus";
+import { lineTotalCents } from "@/models/pricing";
 import { formatMXN } from "@/utils/format";
 import { OrderTotals } from "@/views/OrderTotals";
 import { PrimaryButton } from "@/views/PrimaryButton";
@@ -121,7 +122,7 @@ export default function AcceptQuote() {
                 {item.quantity}× {item.name}
               </Text>
               <Text className="font-quicksand-semibold text-sm text-dark-100">
-                {formatMXN(item.unit_price_cents * item.quantity)}
+                {formatMXN(lineTotalCents(item.quantity, item.unit_price_cents, item.dozen_price_cents))}
               </Text>
             </View>
           ))}
