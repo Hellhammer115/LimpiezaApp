@@ -53,10 +53,14 @@ export default function Home() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="px-5"
+          contentContainerClassName="gap-3 px-5"
         >
           {(categories ?? []).map((category) => (
-            <CategoryTile key={category.id} category={category} />
+            <CategoryTile
+              key={category.id}
+              category={category}
+              className="w-28"
+            />
           ))}
         </ScrollView>
 

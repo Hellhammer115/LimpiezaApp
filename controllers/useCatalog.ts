@@ -29,9 +29,13 @@ export function useCategory(id: string | undefined) {
 }
 
 /** Active products filtered by category / search / limit. */
-export function useProducts(filter?: ProductFilter) {
+export function useProducts(
+  filter?: ProductFilter,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: ["products", filter ?? {}],
+    enabled: options?.enabled ?? true,
     queryFn: () => fetchProducts(filter),
   });
 }
