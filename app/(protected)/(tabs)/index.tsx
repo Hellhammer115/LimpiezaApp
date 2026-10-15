@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -23,8 +24,18 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-6"
       >
+        {/* Logo */}
+        <View className="items-center px-5 pt-2">
+          <Image
+            source={require("@/assets/images/home-logo.png")}
+            style={{ width: 170, height: 84 }}
+            contentFit="contain"
+            accessibilityLabel="Quimai"
+          />
+        </View>
+
         {/* Header */}
-        <View className="flex-row items-center gap-3 px-5 pt-4">
+        <View className="flex-row items-center gap-3 px-5 pt-2">
           <Pressable
             onPress={() => router.push("/search")}
             className="searchbar flex-1 px-4 py-3"
