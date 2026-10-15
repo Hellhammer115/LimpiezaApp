@@ -6,25 +6,33 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "r
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { SignUpError, signUp } from "@/controllers/useAuth";
+import {
+  SignUpError,
+  nameSchema,
+  passwordSchema,
+  phoneSchema,
+  signUp,
+} from "@/controllers/useAuth";
+import { legalVersionsOf, useCurrentLegalDocuments } from "@/controllers/useLegal";
+import { CaptchaCancelled } from "@/views/captchaTypes";
+import { CheckboxField } from "@/views/CheckboxField";
 import { FormInput } from "@/views/FormInput";
+import { PasswordInput } from "@/views/PasswordInput";
 import { PrimaryButton } from "@/views/PrimaryButton";
+import { useCaptcha } from "@/views/useCaptcha";
 
 const schema = z
   .object({
-    name: z.string().trim().min(1, "Ingresa tu nombre"),
-    last_name: z.string().trim().min(1, "Ingresa tu apellido"),
-    phone: z
-      .string()
-      .trim()
-      .regex(/^\d{10}$/, "Teléfono a 10 dígitos"),
+    name: nameSchema("Ingresa tu nombre"),
+    last_name: nameSchema("Ingresa tu apellido"),
+    phone: phoneSchema,
     email: z.string().trim().email("Correo inválido"),
-    password: z
-      .string()
-      .min(8, "Mínimo 8 caracteres")
-      .regex(/[A-Za-z]/, "Debe incluir letras")
-      .regex(/\d/, "Debe incluir números"),
+    password: passwordSchema,
     confirm: z.string(),
+    // Must be ticked by the user; never pre-checked.
+    acceptLegal: z.boolean().refine((v) => v, {
+      message: "Debes aceptar los Términos y el Aviso de Privacidad",
+    }),
   })
   .refine((data) => data.password === data.confirm, {
     path: ["confirm"],
@@ -36,7 +44,10 @@ type FormValues = z.infer<typeof schema>;
 /** VIEW — sign-up screen: validates the form and delegates to the auth controller. */
 export default function SignUp() {
   const [submitting, setSubmitting] = useState(false);
-  const { control, handleSubmit, setError } = useForm<FormValues>({
+  const captcha = useCaptcha();
+  const legal = useCurrentLegalDocuments();
+  const legalVersions = legal.data ? legalVersionsOf(legal.data) : null;
+  const { control, handleSubmit, setError, setValue } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: "",
@@ -45,6 +56,7 @@ export default function SignUp() {
       email: "",
       password: "",
       confirm: "",
+      acceptLegal: false,
     },
   });
 
@@ -57,9 +69,19 @@ export default function SignUp() {
    * an Alert would leave the user guessing which one collided.
    */
   const onSubmit = handleSubmit(async ({ name, last_name, phone, email, password }) => {
+    if (!legalVersions) return;
     setSubmitting(true);
     try {
-      const sessionStarted = await signUp({ name, last_name, phone, email, password });
+      const captchaToken = await captcha.execute();
+      const sessionStarted = await signUp({
+        name,
+        last_name,
+        phone,
+        email,
+        password,
+        legalVersions,
+        captchaToken,
+      });
       if (!sessionStarted) {
         Alert.alert(
           "Confirma tu correo",
@@ -68,10 +90,23 @@ export default function SignUp() {
         );
       }
     } catch (error) {
-      if (error instanceof SignUpError && error.reason === "email_taken") {
+      const reason = error instanceof SignUpError ? error.reason : null;
+      if (error instanceof CaptchaCancelled) {
+        Alert.alert("Verificación", "Completa la verificación para continuar.");
+      } else if (reason === "email_taken") {
         setError("email", { message: "Ese correo ya tiene una cuenta" });
-      } else if (error instanceof SignUpError && error.reason === "phone_taken") {
+      } else if (reason === "phone_taken") {
         setError("phone", { message: "Ese teléfono ya está registrado" });
+      } else if (reason === "weak_password") {
+        setError("password", { message: "La contraseña no cumple los requisitos" });
+      } else if (reason === "captcha_failed") {
+        Alert.alert("Verificación", "La verificación falló, intenta de nuevo.");
+      } else if (reason === "terms_outdated") {
+        // A new version was published while the form was open: make the
+        // user review and tick it again.
+        setValue("acceptLegal", false);
+        setError("acceptLegal", { message: "Los documentos se actualizaron. Revísalos y acéptalos de nuevo." });
+        void legal.refetch();
       } else {
         Alert.alert("Error", "No se pudo crear la cuenta. Intenta de nuevo.");
       }
@@ -116,30 +151,50 @@ export default function SignUp() {
             autoCapitalize="none"
             autoComplete="email"
           />
-          <FormInput
+          <PasswordInput
             control={control}
             name="password"
             label="Contraseña"
-            placeholder="Mínimo 8 caracteres"
-            secureTextEntry
+            placeholder="Mínimo 8 caracteres, letras y números"
             autoComplete="new-password"
           />
-          <FormInput
+          <PasswordInput
             control={control}
             name="confirm"
             label="Confirmar contraseña"
             placeholder="Repite tu contraseña"
-            secureTextEntry
             autoComplete="new-password"
           />
 
-          <View className="mt-4">
+          <View className="mt-2">
+            <CheckboxField control={control} name="acceptLegal">
+              <Text className="font-quicksand-medium text-sm leading-5 text-dark-100">
+                He leído y acepto los{" "}
+                <Link href="/legal/terms" className="font-quicksand-bold text-primary underline">
+                  Términos y Condiciones
+                </Link>{" "}
+                y el{" "}
+                <Link href="/legal/privacy" className="font-quicksand-bold text-primary underline">
+                  Aviso de Privacidad
+                </Link>
+                .
+              </Text>
+            </CheckboxField>
+          </View>
+
+          <View className="mt-2">
             <PrimaryButton
               title="Crear cuenta"
               onPress={onSubmit}
               loading={submitting}
+              disabled={!legalVersions}
             />
           </View>
+          {legal.isError ? (
+            <Text className="mt-2 text-center font-quicksand-medium text-xs text-coral">
+              No se pudieron cargar los términos. Revisa tu conexión.
+            </Text>
+          ) : null}
 
           <View className="mt-6 flex-row justify-center gap-1">
             <Text className="font-quicksand-medium text-dark-100/60">
@@ -153,6 +208,7 @@ export default function SignUp() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      {captcha.element}
     </SafeAreaView>
   );
 }

@@ -5,6 +5,21 @@
 
 project_id = "limpiezaapp"
 
+# Auth hardening. These apply to the local stack / `supabase config push`;
+# on the hosted project set the same values in the Dashboard:
+#   Auth → Providers → Email: minimum password length 8, "Letters and digits"
+#   Auth → Attack Protection: CAPTCHA on, provider Turnstile, secret key
+# Mirrors models/authRules.ts. Enable the captcha only AFTER shipping an app
+# build that sends tokens, or every sign-in from older installs fails.
+[auth]
+minimum_password_length = 8
+password_requirements = "letters_digits"
+
+[auth.captcha]
+enabled = true
+provider = "turnstile"
+secret = "env(SUPABASE_AUTH_CAPTCHA_SECRET)"
+
 [functions.create-quote]
 verify_jwt = true
 

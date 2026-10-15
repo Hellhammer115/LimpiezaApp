@@ -62,6 +62,15 @@ export const signUp = authModel.signUp;
 /** Sign-up rejection carrying the offending field; re-exported for views. */
 export const SignUpError = authModel.SignUpError;
 
+/** True when Supabase Auth rejected the captcha token. */
+export const isCaptchaError = authModel.isCaptchaError;
+
+/** True when Supabase Auth rejected the password against its strength policy. */
+export const isWeakPasswordError = authModel.isWeakPasswordError;
+
+/** Shared form rules (client mirror of the server-side checks). */
+export { nameSchema, passwordSchema, phoneSchema } from "@/models/authRules";
+
 /** Emails a 6-digit recovery code (silent about whether the account exists). */
 export const requestPasswordReset = authModel.requestPasswordReset;
 

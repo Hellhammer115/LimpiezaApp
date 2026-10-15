@@ -6,9 +6,11 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "r
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { requestPasswordReset } from "@/controllers/useAuth";
+import { isCaptchaError, requestPasswordReset } from "@/controllers/useAuth";
+import { CaptchaCancelled } from "@/views/captchaTypes";
 import { FormInput } from "@/views/FormInput";
 import { PrimaryButton } from "@/views/PrimaryButton";
+import { useCaptcha } from "@/views/useCaptcha";
 
 const schema = z.object({
   email: z.string().trim().email("Correo inválido"),
@@ -19,6 +21,7 @@ type FormValues = z.infer<typeof schema>;
 /** VIEW — step 1 of password recovery: request a code by e-mail. */
 export default function ForgotPassword() {
   const [submitting, setSubmitting] = useState(false);
+  const captcha = useCaptcha();
   const { control, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { email: "" },
@@ -31,9 +34,18 @@ export default function ForgotPassword() {
   const onSubmit = handleSubmit(async ({ email }) => {
     setSubmitting(true);
     try {
-      await requestPasswordReset(email);
+      const captchaToken = await captcha.execute();
+      await requestPasswordReset(email, captchaToken);
       router.push(`/reset-password?email=${encodeURIComponent(email)}`);
     } catch (error) {
+      if (error instanceof CaptchaCancelled) {
+        Alert.alert("Verificación", "Completa la verificación para continuar.");
+        return;
+      }
+      if (isCaptchaError(error)) {
+        Alert.alert("Verificación", "La verificación falló, intenta de nuevo.");
+        return;
+      }
       if (__DEV__) console.error("[forgot-password] reset request failed:", error);
       // 429 = Supabase's per-address e-mail send limit; it applies whether or
       // not the account exists, so naming it reveals nothing.
@@ -94,6 +106,7 @@ export default function ForgotPassword() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      {captcha.element}
     </SafeAreaView>
   );
 }
