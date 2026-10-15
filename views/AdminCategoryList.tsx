@@ -32,7 +32,8 @@ export function AdminCategoryList() {
             <View>
               <Text className="font-quicksand-bold text-dark-100">{category.name}</Text>
               <Text className="mt-0.5 font-quicksand-medium text-sm text-dark-100/60">
-                Orden {category.sort_order}
+                Orden {category.sort_order} ·{" "}
+                {category.product_count === 1 ? "1 producto" : `${category.product_count ?? 0} productos`}
               </Text>
             </View>
           </View>
