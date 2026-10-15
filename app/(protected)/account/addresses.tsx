@@ -135,7 +135,7 @@ export default function Addresses() {
                 </View>
                 <View className="flex-row gap-3">
                   <Pressable onPress={() => openForm(address)} hitSlop={8}>
-                    <Ionicons name="pencil-outline" size={18} color="#3E8368" />
+                    <Ionicons name="pencil-outline" size={18} color="#1B87C9" />
                   </Pressable>
                   <Pressable onPress={() => confirmDelete(address)} hitSlop={8}>
                     <Ionicons name="trash-outline" size={18} color="#FF6B4A" />
@@ -196,7 +196,7 @@ export default function Addresses() {
               onPress={() => openForm("new")}
               className="mt-2 flex-row items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/40 bg-white p-4"
             >
-              <Ionicons name="add" size={18} color="#3E8368" />
+              <Ionicons name="add" size={18} color="#1B87C9" />
               <Text className="font-quicksand-bold text-primary">
                 Agregar dirección
               </Text>

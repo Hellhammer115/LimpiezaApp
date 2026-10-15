@@ -21,7 +21,7 @@ export default function CheckoutResult() {
   if (!order || status === "pending") {
     return (
       <Shell>
-        <ActivityIndicator size="large" color="#3E8368" />
+        <ActivityIndicator size="large" color="#1B87C9" />
         <Title>{order ? "Confirmando tu pago…" : "Cargando…"}</Title>
         {order ? (
           <Subtitle>
@@ -114,7 +114,7 @@ function Subtitle({ children }: { children: React.ReactNode }) {
 
 function Badge({ color, icon }: { color: "primary" | "coral"; icon: "checkmark" | "close" | "paper-plane" }) {
   const bg = color === "primary" ? "bg-primary/15" : "bg-coral/15";
-  const tint = color === "primary" ? "#3E8368" : "#FF6B4A";
+  const tint = color === "primary" ? "#1B87C9" : "#FF6B4A";
   return (
     <View className={`size-20 items-center justify-center rounded-full ${bg}`}>
       <Ionicons name={icon} size={40} color={tint} />

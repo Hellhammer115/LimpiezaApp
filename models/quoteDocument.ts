@@ -41,11 +41,11 @@ export function buildQuoteHtml(order: OrderWithItems): string {
   return `<!doctype html>
 <html lang="es"><head><meta charset="utf-8">
 <style>
-  body { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #10241F; margin: 32px; font-size: 13px; }
-  header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #3E8368; padding-bottom: 12px; margin-bottom: 20px; }
-  h1 { margin: 0; font-size: 22px; color: #3E8368; }
+  body { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #0F2A3D; margin: 32px; font-size: 13px; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1B87C9; padding-bottom: 12px; margin-bottom: 20px; }
+  h1 { margin: 0; font-size: 22px; color: #1B87C9; }
   h2 { margin: 4px 0 0; font-size: 16px; }
-  h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #3E8368; margin: 0 0 6px; }
+  h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #1B87C9; margin: 0 0 6px; }
   .meta { text-align: right; color: #55625E; }
   .cols { display: flex; gap: 24px; margin-bottom: 20px; }
   .cols section { flex: 1; }
@@ -57,8 +57,8 @@ export function buildQuoteHtml(order: OrderWithItems): string {
   .num { text-align: right; white-space: nowrap; }
   .label { text-align: right; color: #55625E; }
   tfoot td { border: none; }
-  tfoot tr.total td { font-weight: bold; font-size: 15px; border-top: 2px solid #3E8368; }
-  .note { margin-top: 20px; background: #F5F7F5; padding: 12px; border-radius: 8px; }
+  tfoot tr.total td { font-weight: bold; font-size: 15px; border-top: 2px solid #1B87C9; }
+  .note { margin-top: 20px; background: #F4F8FB; padding: 12px; border-radius: 8px; }
   footer { margin-top: 32px; font-size: 11px; color: #55625E; }
 </style></head><body>
 <header>

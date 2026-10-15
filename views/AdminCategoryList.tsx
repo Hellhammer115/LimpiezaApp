@@ -22,7 +22,7 @@ export function AdminCategoryList() {
         >
           <View className="flex-1 flex-row items-center gap-3 pr-3">
             <View className="size-9 items-center justify-center rounded-full bg-foam">
-              <Ionicons name={category.icon as IconName} size={18} color="#3E8368" />
+              <Ionicons name={category.icon as IconName} size={18} color="#1B87C9" />
             </View>
             <View>
               <Text className="font-quicksand-bold text-dark-100">{category.name}</Text>

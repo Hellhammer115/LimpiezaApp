@@ -22,7 +22,7 @@ export default function ProductScreen() {
   if (isLoading || !product) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-mist">
-        <ActivityIndicator color="#3E8368" />
+        <ActivityIndicator color="#1B87C9" />
       </SafeAreaView>
     );
   }
@@ -42,7 +42,7 @@ export default function ProductScreen() {
               transition={200}
             />
           ) : (
-            <Ionicons name="basket-outline" size={64} color="#3E8368" />
+            <Ionicons name="basket-outline" size={64} color="#1B87C9" />
           )}
         </View>
 

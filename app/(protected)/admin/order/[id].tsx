@@ -47,7 +47,7 @@ export default function AdminOrderDetail() {
   if (isLoading || !order) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-mist">
-        <ActivityIndicator color="#3E8368" />
+        <ActivityIndicator color="#1B87C9" />
       </SafeAreaView>
     );
   }
@@ -145,9 +145,9 @@ function Loaded({ order }: { order: OrderWithItems }) {
           className="h-10 flex-row items-center gap-1.5 rounded-full bg-white px-3"
         >
           {pdf.generating ? (
-            <ActivityIndicator size="small" color="#3E8368" />
+            <ActivityIndicator size="small" color="#1B87C9" />
           ) : (
-            <Ionicons name="download-outline" size={16} color="#3E8368" />
+            <Ionicons name="download-outline" size={16} color="#1B87C9" />
           )}
           <Text className="font-quicksand-semibold text-sm text-dark-100">PDF</Text>
         </Pressable>

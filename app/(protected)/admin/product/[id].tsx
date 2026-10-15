@@ -21,7 +21,7 @@ export default function EditProduct() {
           {product ? (
             <ProductForm product={product} />
           ) : isLoading ? (
-            <ActivityIndicator className="mt-10" color="#3E8368" />
+            <ActivityIndicator className="mt-10" color="#1B87C9" />
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>

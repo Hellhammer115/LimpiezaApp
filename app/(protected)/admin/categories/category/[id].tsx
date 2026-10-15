@@ -21,7 +21,7 @@ export default function EditCategory() {
           {category ? (
             <CategoryForm category={category} />
           ) : isLoading ? (
-            <ActivityIndicator className="mt-10" color="#3E8368" />
+            <ActivityIndicator className="mt-10" color="#1B87C9" />
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>

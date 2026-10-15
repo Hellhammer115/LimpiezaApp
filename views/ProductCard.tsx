@@ -29,7 +29,7 @@ export function ProductCard({ product }: { product: Product }) {
             transition={150}
           />
         ) : (
-          <Ionicons name="basket-outline" size={34} color="#3E8368" />
+          <Ionicons name="basket-outline" size={34} color="#1B87C9" />
         )}
       </View>
 

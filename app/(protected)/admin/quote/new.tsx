@@ -101,7 +101,7 @@ export default function AdminNewQuote() {
               value={query}
               onChangeText={setQuery}
               placeholder="Correo o teléfono del cliente"
-              placeholderTextColor="rgba(16,36,31,0.35)"
+              placeholderTextColor="rgba(15,42,61,0.35)"
               autoCapitalize="none"
               keyboardType="email-address"
               className="input mb-2"
@@ -112,7 +112,7 @@ export default function AdminNewQuote() {
                 onPress={() => setCustomer(c)}
                 className="mb-2 flex-row items-center rounded-2xl bg-white p-4"
               >
-                <Ionicons name="person-circle-outline" size={28} color="#3E8368" />
+                <Ionicons name="person-circle-outline" size={28} color="#1B87C9" />
                 <View className="ml-3 flex-1">
                   <Text className="font-quicksand-bold text-dark-100">
                     {[c.name, c.last_name].filter(Boolean).join(" ") || c.email}

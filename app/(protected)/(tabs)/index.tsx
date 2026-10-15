@@ -9,7 +9,7 @@ import { ProductCard } from "@/views/ProductCard";
 import { useCartCount } from "@/controllers/useCart";
 import { useCategories, useProducts } from "@/controllers/useCatalog";
 
-const ICON_MUTED = "rgba(16,36,31,0.35)";
+const ICON_MUTED = "rgba(15,42,61,0.35)";
 
 /** VIEW — home tab: search, categories, featured. */
 export default function Home() {
@@ -24,18 +24,14 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-6"
       >
-        {/* Logo */}
-        <View className="items-center px-5 pt-2">
+        {/* Header: logo, search, cart */}
+        <View className="flex-row items-center gap-3 px-5 pt-4">
           <Image
             source={require("@/assets/images/home-logo.png")}
-            style={{ width: 170, height: 84 }}
+            style={{ width: 84, height: 43 }}
             contentFit="contain"
             accessibilityLabel="Quimai"
           />
-        </View>
-
-        {/* Header */}
-        <View className="flex-row items-center gap-3 px-5 pt-2">
           <Pressable
             onPress={() => router.push("/search")}
             className="searchbar flex-1 px-4 py-3"

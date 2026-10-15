@@ -18,7 +18,7 @@ export function AdminOrderList({ kind }: Props) {
   if (query.isLoading) {
     return (
       <View className="flex-1 items-center justify-center">
-        <ActivityIndicator color="#3E8368" />
+        <ActivityIndicator color="#1B87C9" />
       </View>
     );
   }
