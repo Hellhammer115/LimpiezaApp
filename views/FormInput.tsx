@@ -30,7 +30,7 @@ export function FormInput<T extends FieldValues>({
             value={value ?? ""}
             onChangeText={onChange}
             onBlur={onBlur}
-            placeholderTextColor="rgba(16,36,31,0.35)"
+            placeholderTextColor="rgba(15,42,61,0.35)"
             className={`input ${
               fieldState.error ? "border-coral" : "border-dark-100/15"
             }`}

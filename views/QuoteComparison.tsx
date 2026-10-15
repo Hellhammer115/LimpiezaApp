@@ -37,7 +37,7 @@ export function QuoteChanges({ previous, order, diff, pending }: ChangesProps) {
         <Ionicons
           name={pending ? "sparkles" : "checkmark-circle"}
           size={20}
-          color={pending ? "#F2B705" : "#3E8368"}
+          color={pending ? "#F2B705" : "#1B87C9"}
         />
         <View className="ml-3 flex-1">
           <Text className={`font-quicksand-bold ${pending ? "text-dark-100" : "text-primary"}`}>

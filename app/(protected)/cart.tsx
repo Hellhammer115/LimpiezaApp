@@ -33,7 +33,7 @@ export default function Cart() {
           className="size-9 items-center justify-center rounded-full bg-white"
           hitSlop={8}
         >
-          <Ionicons name="close" size={20} color="#10241F" />
+          <Ionicons name="close" size={20} color="#0F2A3D" />
         </Pressable>
       </View>
 
@@ -59,7 +59,7 @@ export default function Cart() {
                       contentFit="contain"
                     />
                   ) : (
-                    <Ionicons name="basket-outline" size={24} color="#3E8368" />
+                    <Ionicons name="basket-outline" size={24} color="#1B87C9" />
                   )}
                 </View>
                 <View className="ml-3 flex-1">

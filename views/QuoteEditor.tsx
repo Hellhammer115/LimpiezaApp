@@ -199,7 +199,7 @@ export function QuoteEditor({ draft, onChange }: Props) {
           value={draft.adminNote}
           onChangeText={(t) => onChange({ ...draft, adminNote: t })}
           placeholder="Opcional"
-          placeholderTextColor="rgba(16,36,31,0.35)"
+          placeholderTextColor="rgba(15,42,61,0.35)"
           multiline
           maxLength={1000}
           className="input min-h-[64px]"
@@ -226,7 +226,7 @@ function Stepper({ value, onChange }: { value: number; onChange: (v: number) => 
         className="size-8 items-center justify-center rounded-full bg-white"
         hitSlop={6}
       >
-        <Ionicons name="remove" size={16} color="#10241F" />
+        <Ionicons name="remove" size={16} color="#0F2A3D" />
       </Pressable>
       <Text className="min-w-5 text-center font-quicksand-bold text-sm text-dark-100">{value}</Text>
       <Pressable

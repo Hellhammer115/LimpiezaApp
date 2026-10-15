@@ -28,7 +28,7 @@ export function AdminProductList() {
           value={search}
           onChangeText={setSearch}
           placeholder="Buscar producto…"
-          placeholderTextColor="rgba(16,36,31,0.35)"
+          placeholderTextColor="rgba(15,42,61,0.35)"
           className="input"
         />
       </View>

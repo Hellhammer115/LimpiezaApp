@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,7 +9,7 @@ import { ProductCard } from "@/views/ProductCard";
 import { useCartCount } from "@/controllers/useCart";
 import { useCategories, useProducts } from "@/controllers/useCatalog";
 
-const ICON_MUTED = "rgba(16,36,31,0.35)";
+const ICON_MUTED = "rgba(15,42,61,0.35)";
 
 /** VIEW — home tab: search, categories, featured. */
 export default function Home() {
@@ -23,8 +24,14 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-6"
       >
-        {/* Header */}
+        {/* Header: logo, search, cart */}
         <View className="flex-row items-center gap-3 px-5 pt-4">
+          <Image
+            source={require("@/assets/images/home-logo.png")}
+            style={{ width: 84, height: 43 }}
+            contentFit="contain"
+            accessibilityLabel="Quimai"
+          />
           <Pressable
             onPress={() => router.push("/search")}
             className="searchbar flex-1 px-4 py-3"
@@ -53,10 +60,14 @@ export default function Home() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="px-5"
+          contentContainerClassName="gap-3 px-5"
         >
           {(categories ?? []).map((category) => (
-            <CategoryTile key={category.id} category={category} />
+            <CategoryTile
+              key={category.id}
+              category={category}
+              className="w-28"
+            />
           ))}
         </ScrollView>
 

@@ -11,7 +11,7 @@ export function ScreenHeader({ title }: { title: string }) {
         className="size-10 items-center justify-center rounded-full bg-white"
         hitSlop={8}
       >
-        <Ionicons name="arrow-back" size={20} color="#10241F" />
+        <Ionicons name="arrow-back" size={20} color="#0F2A3D" />
       </Pressable>
       <Text
         numberOfLines={1}

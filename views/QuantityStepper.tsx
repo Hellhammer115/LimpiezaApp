@@ -32,7 +32,7 @@ export function QuantityStepper({ productId, compact }: Props) {
         <Ionicons
           name={quantity === 1 ? "trash-outline" : "remove"}
           size={iconSize}
-          color="#10241F"
+          color="#0F2A3D"
         />
       </Pressable>
       <Text className="min-w-5 text-center font-quicksand-bold text-sm text-dark-100">

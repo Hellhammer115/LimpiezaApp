@@ -65,7 +65,7 @@ export default function Checkout() {
               <Ionicons
                 name={selected ? "radio-button-on" : "radio-button-off"}
                 size={20}
-                color={selected ? "#3E8368" : "rgba(16,36,31,0.3)"}
+                color={selected ? "#1B87C9" : "rgba(15,42,61,0.3)"}
               />
               <View className="ml-3 flex-1">
                 <Text className="font-quicksand-bold text-dark-100">
@@ -82,7 +82,7 @@ export default function Checkout() {
           onPress={() => router.push("/account/addresses")}
           className="mb-4 flex-row items-center gap-1"
         >
-          <Ionicons name="add" size={16} color="#3E8368" />
+          <Ionicons name="add" size={16} color="#1B87C9" />
           <Text className="font-quicksand-bold text-sm text-primary">
             Agregar dirección
           </Text>
