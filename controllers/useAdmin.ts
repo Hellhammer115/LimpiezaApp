@@ -133,10 +133,16 @@ export function useUpdateCategory() {
   });
 }
 
+/** Permanently deletes a category, moving its products to `moveTo` first. */
 export function useDeleteCategory() {
-  const invalidate = useInvalidateCategories();
+  const invalidateCategories = useInvalidateCategories();
+  const invalidateProducts = useInvalidateCatalog();
   return useMutation({
-    mutationFn: (id: string) => deleteCategory(id),
-    onSuccess: invalidate,
+    mutationFn: ({ id, moveTo }: { id: string; moveTo?: string }) => deleteCategory(id, moveTo),
+    onSuccess: () => {
+      invalidateCategories();
+      // Moved products changed category, so product lists are stale too.
+      invalidateProducts();
+    },
   });
 }

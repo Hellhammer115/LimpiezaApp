@@ -175,7 +175,11 @@ export type OrderWithItems = Order & {
 export type AdminProduct = Product & { updated_by_email: string | null };
 
 /** Category with the editor's email resolved — returned only by admin-categories. */
-export type AdminCategory = Category & { updated_by_email: string | null };
+export type AdminCategory = Category & {
+  updated_by_email: string | null;
+  /** Products currently in the category (they must be moved before deleting it). */
+  product_count: number;
+};
 
 /** A registered customer as returned by the admin-users lookup. */
 export interface CustomerMatch {

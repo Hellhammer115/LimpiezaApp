@@ -12,13 +12,13 @@ import { z } from "zod";
 
 import {
   useCreateCategory,
-  useDeleteCategory,
   useUpdateCategory,
   useUploadCatalogImage,
 } from "@/controllers/useAdmin";
 import type { CategoryInput } from "@/models/adminModel";
 import type { AdminCategory } from "@/models/types";
 import { formatDate } from "@/utils/format";
+import { DeleteCategoryDialog } from "@/views/DeleteCategoryDialog";
 import { FormInput } from "@/views/FormInput";
 import { IconPicker } from "@/views/IconPicker";
 import { PrimaryButton } from "@/views/PrimaryButton";
@@ -37,7 +37,7 @@ type FormValues = z.infer<typeof schema>;
 export function CategoryForm({ category }: { category?: AdminCategory }) {
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
-  const deleteCategory = useDeleteCategory();
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const uploadImage = useUploadCatalogImage("category");
 
   // The photo is optional; the icon stays required as the fallback tile.
@@ -117,25 +117,6 @@ export function CategoryForm({ category }: { category?: AdminCategory }) {
     }
   });
 
-  const confirmDelete = () => {
-    if (!category) return;
-    Alert.alert("Eliminar categoría", `¿Desactivar "${category.name}"?`, [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Eliminar",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteCategory.mutateAsync(category.id);
-            router.back();
-          } catch {
-            Alert.alert("Error", "No se pudo eliminar la categoría.");
-          }
-        },
-      },
-    ]);
-  };
-
   const saving = createCategory.isPending || updateCategory.isPending || uploadImage.isPending;
 
   return (
@@ -194,9 +175,16 @@ export function CategoryForm({ category }: { category?: AdminCategory }) {
       />
 
       {category ? (
-        <Pressable onPress={confirmDelete} className="mt-3 items-center py-2">
-          <Text className="font-quicksand-semibold text-coral">Eliminar categoría</Text>
-        </Pressable>
+        <>
+          <Pressable onPress={() => setDeleteOpen(true)} className="mt-3 items-center py-2">
+            <Text className="font-quicksand-semibold text-coral">Eliminar categoría</Text>
+          </Pressable>
+          <DeleteCategoryDialog
+            category={category}
+            visible={deleteOpen}
+            onClose={() => setDeleteOpen(false)}
+          />
+        </>
       ) : null}
     </View>
   );

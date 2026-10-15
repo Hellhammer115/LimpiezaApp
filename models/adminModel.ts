@@ -128,9 +128,16 @@ export async function updateCategory(
   return invokeAdminFunction<AdminCategory>("admin-categories", "PATCH", { id, ...patch });
 }
 
-/** Soft-deletes (deactivates) a category; it can be reactivated by editing it. */
-export async function deleteCategory(id: string): Promise<AdminCategory> {
-  return invokeAdminFunction<AdminCategory>("admin-categories", "DELETE", { id });
+/**
+ * Permanently deletes a category. If it still has products they're moved to
+ * `moveTo` in the same transaction (required in that case — the server
+ * refuses otherwise). To hide a category reversibly, set is_active instead.
+ */
+export async function deleteCategory(
+  id: string,
+  moveTo?: string
+): Promise<{ deleted: true; moved_products: number }> {
+  return invokeAdminFunction("admin-categories", "DELETE", { id, move_to: moveTo ?? null });
 }
 
 /**

@@ -22,7 +22,18 @@ const categoryInput = z.object({
 });
 
 const patchInput = categoryInput.partial().extend({ id: z.string().uuid() });
-const deleteInput = z.object({ id: z.string().uuid() });
+// move_to: where the category's products go; required only when it has any.
+const deleteInput = z.object({
+  id: z.string().uuid(),
+  move_to: z.string().uuid().nullable().optional(),
+});
+
+/** Storage path inside product-images for one of its public URLs, or null. */
+function storagePath(url: string | null): string | null {
+  const marker = "/storage/v1/object/public/product-images/";
+  const at = url?.indexOf(marker) ?? -1;
+  return url && at >= 0 ? decodeURIComponent(url.slice(at + marker.length)) : null;
+}
 
 Deno.serve(async (req) => {
   try {
@@ -48,7 +59,9 @@ Deno.serve(async (req) => {
     if (req.method === "GET") {
       const { data: categories, error } = await admin
         .from("categories")
-        .select("*")
+        // products(count): how many products each category holds, so the
+        // delete dialog knows whether they need a new home.
+        .select("*, products(count)")
         .order("sort_order");
       if (error) throw error;
 
@@ -66,8 +79,9 @@ Deno.serve(async (req) => {
         const { data } = await admin.auth.admin.getUserById(id);
         if (data.user?.email) emailById.set(id, data.user.email);
       }
-      const withEmail = categories.map((c) => ({
+      const withEmail = categories.map(({ products, ...c }) => ({
         ...c,
+        product_count: (products as { count: number }[] | null)?.[0]?.count ?? 0,
         updated_by_email: c.updated_by ? (emailById.get(c.updated_by) ?? null) : null,
       }));
       return json(withEmail);
@@ -104,20 +118,34 @@ Deno.serve(async (req) => {
     }
 
     if (req.method === "DELETE") {
+      // Permanent delete. Products are moved to move_to first, atomically,
+      // inside delete_category (deactivating stays the reversible option).
       const parsed = deleteInput.safeParse(await req.json());
       if (!parsed.success) return json({ error: "Solicitud inválida" }, 400);
-      const { data, error } = await admin
+      const { data: existing } = await admin
         .from("categories")
-        .update({
-          is_active: false,
-          updated_by: user.id,
-          updated_at: new Date().toISOString(),
-        })
+        .select("image_url")
         .eq("id", parsed.data.id)
-        .select("*")
-        .single();
-      if (error) throw error;
-      return json({ ...data, updated_by_email: user.email ?? null });
+        .maybeSingle();
+      const { data: moved, error } = await admin.rpc("delete_category", {
+        p_category_id: parsed.data.id,
+        p_move_to: parsed.data.move_to ?? null,
+        p_actor: user.id,
+      });
+      if (error) {
+        // P0001 / P0002 carry the RPC's user-facing Spanish message.
+        if (error.code === "P0001" || error.code === "P0002") {
+          return json({ error: error.message }, 409);
+        }
+        throw error;
+      }
+      // Best effort: drop the category's photo; a leftover file is harmless.
+      const path = storagePath(existing?.image_url ?? null);
+      if (path?.startsWith("categories/")) {
+        const { error: removeError } = await admin.storage.from("product-images").remove([path]);
+        if (removeError) console.warn("category image cleanup failed", removeError);
+      }
+      return json({ deleted: true, moved_products: moved ?? 0 });
     }
 
     return json({ error: "Método no permitido" }, 405);
