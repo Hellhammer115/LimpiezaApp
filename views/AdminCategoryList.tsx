@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import type { ComponentProps } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -21,8 +22,12 @@ export function AdminCategoryList() {
           className="mb-3 flex-row items-center justify-between rounded-2xl bg-white p-4"
         >
           <View className="flex-1 flex-row items-center gap-3 pr-3">
-            <View className="size-9 items-center justify-center rounded-full bg-foam">
-              <Ionicons name={category.icon as IconName} size={18} color="#1B87C9" />
+            <View className="size-9 items-center justify-center overflow-hidden rounded-full bg-foam">
+              {category.image_url ? (
+                <Image source={{ uri: category.image_url }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
+              ) : (
+                <Ionicons name={category.icon as IconName} size={18} color="#1B87C9" />
+              )}
             </View>
             <View>
               <Text className="font-quicksand-bold text-dark-100">{category.name}</Text>

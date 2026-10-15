@@ -12,6 +12,7 @@ import { formatMXN } from "@/utils/format";
 import { OrderTotals } from "@/views/OrderTotals";
 import { PrimaryButton } from "@/views/PrimaryButton";
 import { ScreenHeader } from "@/views/ScreenHeader";
+import { Chip } from "@/views/Chip";
 
 /**
  * VIEW — checkout: address + delivery-slot pickers and the order summary.
@@ -96,19 +97,7 @@ export default function Checkout() {
           {DELIVERY_SLOTS.map((s) => {
             const active = s === slot;
             return (
-              <Pressable
-                key={s}
-                onPress={() => setSlot(s)}
-                className={active ? "chip-active" : "chip"}
-              >
-                <Text
-                  className={`font-quicksand-semibold text-sm ${
-                    active ? "text-white" : "text-dark-100"
-                  }`}
-                >
-                  {s}
-                </Text>
-              </Pressable>
+              <Chip key={s} label={s} active={active} onPress={() => setSlot(s)} />
             );
           })}
         </View>

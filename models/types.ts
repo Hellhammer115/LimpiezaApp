@@ -43,6 +43,8 @@ export interface Category {
   id: string;
   name: string;
   icon: string;
+  /** Optional photo; when set, tiles show it instead of the icon. */
+  image_url: string | null;
   sort_order: number;
   is_active: boolean;
   updated_at: string;

@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AdminCategoryList } from "@/views/AdminCategoryList";
 import { AdminOrderList } from "@/views/AdminOrderList";
 import { AdminProductList } from "@/views/AdminProductList";
+import { Chip } from "@/views/Chip";
 
 type Section = "products" | "categories" | "quotes" | "orders";
 
@@ -46,28 +47,19 @@ export default function AdminHome() {
         ) : null}
       </View>
 
-      {/* flex-grow-0: a ScrollView defaults to flexGrow 1 and would share the
-          screen height with the panel below instead of hugging the chips. */}
+      {/* A ScrollView defaults to flexGrow 1 AND flexShrink 1: grow-0 stops it
+          sharing the screen height with the panel below, shrink-0 stops that
+          panel squeezing it (which clipped the bottom of the chips). */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        className="flex-grow-0"
+        className="flex-shrink-0 flex-grow-0"
         contentContainerClassName="px-5 pb-3"
       >
         {SECTIONS.map((s) => {
           const active = s.key === section;
           return (
-            <Pressable
-              key={s.key}
-              onPress={() => setSection(s.key)}
-              className={active ? "chip-active" : "chip"}
-            >
-              <Text
-                className={`font-quicksand-semibold text-sm ${active ? "text-white" : "text-dark-100"}`}
-              >
-                {s.label}
-              </Text>
-            </Pressable>
+            <Chip key={s.key} label={s.label} active={active} onPress={() => setSection(s.key)} />
           );
         })}
       </ScrollView>

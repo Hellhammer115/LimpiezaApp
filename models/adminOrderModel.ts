@@ -11,14 +11,23 @@ import type {
   QuoteEditInput,
 } from "@/models/types";
 
-/** All rows of one kind (quotes = unpaid, orders = paid), newest first. */
+/** Page size of the admin cotizaciones / pedidos lists. */
+export const ADMIN_ORDERS_PAGE = 30;
+
+/**
+ * One page of rows of one kind (quotes = unpaid, orders = paid), newest
+ * first, optionally filtered by customer name or email.
+ */
 export async function listAdminOrders(
   kind: OrderKind,
-  search?: string
+  search: string | undefined,
+  offset: number
 ): Promise<OrderWithItems[]> {
   return invokeAdminFunction<OrderWithItems[]>("admin-orders", "GET", undefined, {
     kind,
     search,
+    offset: String(offset),
+    limit: String(ADMIN_ORDERS_PAGE),
   });
 }
 

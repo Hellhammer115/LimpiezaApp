@@ -15,6 +15,8 @@ function json(body: unknown, status = 200): Response {
 const categoryInput = z.object({
   name: z.string().trim().min(1).max(100),
   icon: z.string().trim().min(1).max(50),
+  // Optional so older app builds that don't send it still validate.
+  image_url: z.string().url().nullable().optional(),
   sort_order: z.number().int(),
   is_active: z.boolean(),
 });

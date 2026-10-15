@@ -15,13 +15,14 @@ import {
   useCreateProduct,
   useDeleteProduct,
   useUpdateProduct,
-  useUploadProductImage,
+  useUploadCatalogImage,
 } from "@/controllers/useAdmin";
 import type { ProductInput } from "@/models/adminModel";
 import type { AdminProduct } from "@/models/types";
 import { formatDate } from "@/utils/format";
 import { FormInput } from "@/views/FormInput";
 import { PrimaryButton } from "@/views/PrimaryButton";
+import { Chip } from "@/views/Chip";
 
 const schema = z.object({
   sku: z.string().trim(),
@@ -52,7 +53,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
-  const uploadImage = useUploadProductImage();
+  const uploadImage = useUploadCatalogImage();
 
   const [imageUrl, setImageUrl] = useState<string | null>(product?.image_url ?? null);
 
@@ -213,17 +214,12 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
         {(categories ?? []).map((c) => {
           const active = c.id === categoryId;
           return (
-            <Pressable
+            <Chip
               key={c.id}
+              label={c.name}
+              active={active}
               onPress={() => setValue("category_id", c.id, { shouldValidate: true, shouldDirty: true })}
-              className={active ? "chip-active" : "chip"}
-            >
-              <Text
-                className={`font-quicksand-semibold text-sm ${active ? "text-white" : "text-dark-100"}`}
-              >
-                {c.name}
-              </Text>
-            </Pressable>
+            />
           );
         })}
       </View>

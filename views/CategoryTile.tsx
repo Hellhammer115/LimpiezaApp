@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import type { ComponentProps } from "react";
 import { Pressable, Text, View } from "react-native";
@@ -24,8 +25,9 @@ const TILE_COLORS = [
 const LIGHT_TILES = new Set(["#FFD43B", "#B5E61D", "#FFB84D", "#F2C66D"]);
 
 /**
- * VIEW — Calii-style category tile: a colored square with a big icon and the
- * name centered underneath. The parent sets the width; the square follows it.
+ * VIEW — Calii-style category tile: a colored square with a big icon (or the
+ * category's photo, when an admin uploaded one) and the name centered
+ * underneath. The parent sets the width; the square follows it.
  */
 export function CategoryTile({
   category,
@@ -43,17 +45,29 @@ export function CategoryTile({
       onPress={() => router.push(`/category/${category.id}`)}
       className={className}
     >
-      <View style={{ backgroundColor: color }} className="category-tile">
-        {/* Soft decorative circle so flat tiles don't feel empty */}
-        <View
-          className="absolute -right-6 -top-6 size-20 rounded-full"
-          style={{ backgroundColor: "rgba(255,255,255,0.18)" }}
-        />
-        <Ionicons
-          name={(category.icon || "pricetag-outline") as IconName}
-          size={44}
-          color={iconColor}
-        />
+      <View style={{ backgroundColor: color }} className="category-tile overflow-hidden">
+        {category.image_url ? (
+          // Admin-uploaded photo fills the tile; the icon is only the fallback.
+          <Image
+            source={{ uri: category.image_url }}
+            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+            contentFit="cover"
+            transition={150}
+          />
+        ) : (
+          <>
+            {/* Soft decorative circle so flat tiles don't feel empty */}
+            <View
+              className="absolute -right-6 -top-6 size-20 rounded-full"
+              style={{ backgroundColor: "rgba(255,255,255,0.18)" }}
+            />
+            <Ionicons
+              name={(category.icon || "pricetag-outline") as IconName}
+              size={44}
+              color={iconColor}
+            />
+          </>
+        )}
       </View>
       <Text
         numberOfLines={2}
