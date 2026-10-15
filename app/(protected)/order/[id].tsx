@@ -38,7 +38,7 @@ export default function OrderDetail() {
   if (isLoading || !order) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-mist">
-        <ActivityIndicator color="#3E8368" />
+        <ActivityIndicator color="#1B87C9" />
       </SafeAreaView>
     );
   }

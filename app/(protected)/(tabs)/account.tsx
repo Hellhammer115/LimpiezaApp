@@ -24,7 +24,7 @@ function AccountRow({
   return (
     <Pressable onPress={onPress} className="info-row mb-3">
       <View className="info-row__icon">
-        <Ionicons name={icon} size={20} color={destructive ? "#FF6B4A" : "#3E8368"} />
+        <Ionicons name={icon} size={20} color={destructive ? "#FF6B4A" : "#1B87C9"} />
       </View>
       <Text
         className={`flex-1 font-quicksand-bold ${
@@ -33,7 +33,7 @@ function AccountRow({
       >
         {label}
       </Text>
-      <Ionicons name="chevron-forward" size={18} color="rgba(16,36,31,0.35)" />
+      <Ionicons name="chevron-forward" size={18} color="rgba(15,42,61,0.35)" />
     </Pressable>
   );
 }
@@ -64,7 +64,7 @@ export default function Account() {
 
         <View className="mt-4 items-center rounded-2xl bg-white p-6">
           <View className="size-20 items-center justify-center rounded-full bg-foam">
-            <Ionicons name="person" size={36} color="#3E8368" />
+            <Ionicons name="person" size={36} color="#1B87C9" />
           </View>
           <Text className="mt-3 font-quicksand-bold text-lg text-dark-100">
             {profile ? `${profile.name} ${profile.last_name}`.trim() : "…"}

@@ -135,7 +135,7 @@ export function CategoryForm({ category }: { category?: AdminCategory }) {
               onPress={() => setValue("icon", option, { shouldValidate: true, shouldDirty: true })}
               className={`size-11 items-center justify-center rounded-full ${active ? "bg-primary" : "bg-white"}`}
             >
-              <Ionicons name={option} size={20} color={active ? "white" : "#3E8368"} />
+              <Ionicons name={option} size={20} color={active ? "white" : "#1B87C9"} />
             </Pressable>
           );
         })}
@@ -145,7 +145,7 @@ export function CategoryForm({ category }: { category?: AdminCategory }) {
 
       <View className="mb-4 flex-row items-center justify-between rounded-2xl bg-white p-4">
         <Text className="font-quicksand-bold text-dark-100">Activa</Text>
-        <Switch value={isActive} onValueChange={(v) => setValue("is_active", v, { shouldDirty: true })} trackColor={{ true: "#3E8368" }} />
+        <Switch value={isActive} onValueChange={(v) => setValue("is_active", v, { shouldDirty: true })} trackColor={{ true: "#1B87C9" }} />
       </View>
 
       {category ? (

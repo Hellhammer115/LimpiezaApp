@@ -195,7 +195,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
           />
         ) : (
           <View className="items-center">
-            <Ionicons name="camera-outline" size={28} color="#3E8368" />
+            <Ionicons name="camera-outline" size={28} color="#1B87C9" />
             <Text className="mt-1 font-quicksand-semibold text-sm text-dark-100/60">
               {uploadImage.isPending ? "Subiendo…" : "Agregar imagen"}
             </Text>
@@ -259,7 +259,7 @@ export function ProductForm({ product }: { product?: AdminProduct }) {
 
       <View className="mb-4 flex-row items-center justify-between rounded-2xl bg-white p-4">
         <Text className="font-quicksand-bold text-dark-100">Activo</Text>
-        <Switch value={isActive} onValueChange={(v) => setValue("is_active", v, { shouldDirty: true })} trackColor={{ true: "#3E8368" }} />
+        <Switch value={isActive} onValueChange={(v) => setValue("is_active", v, { shouldDirty: true })} trackColor={{ true: "#1B87C9" }} />
       </View>
 
       {product ? (

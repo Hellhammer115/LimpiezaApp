@@ -15,7 +15,7 @@ export function EmptyState({ icon = "leaf-outline", title, subtitle }: Props) {
   return (
     <View className="flex-1 items-center justify-center px-10 py-16">
       <View className="size-16 items-center justify-center rounded-full bg-foam">
-        <Ionicons name={icon} size={28} color="#3E8368" />
+        <Ionicons name={icon} size={28} color="#1B87C9" />
       </View>
       <Text className="mt-4 text-center font-quicksand-bold text-lg text-dark-100">
         {title}

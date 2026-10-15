@@ -5,7 +5,7 @@ export const PROMO_SLIDES = [
         eyebrow: "LimpiezaApp+",
         title: "Gana $150 en crédito cada mes y envío gratis",
         cta: "Conoce más",
-        color: "#3E8368",
+        color: "#1B87C9",
     },
     {
         id: "2",

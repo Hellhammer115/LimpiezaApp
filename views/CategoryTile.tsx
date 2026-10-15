@@ -14,7 +14,7 @@ const TILE_COLORS = [
   "#B5E61D", // lima
   "#FF7A59", // coral
   "#2EC4D6", // turquesa
-  "#3E8368", // verde marca
+
   "#FFB84D", // naranja
   "#2F5BD3", // azul
   "#F2C66D", // trigo
@@ -36,7 +36,7 @@ export function CategoryTile({
 }) {
   const index = Math.abs(category.sort_order) % TILE_COLORS.length;
   const color = TILE_COLORS[index];
-  const iconColor = LIGHT_TILES.has(color) ? "#10241F" : "white";
+
 
   return (
     <Pressable
