@@ -14,6 +14,7 @@ import { CategoryTile } from "@/views/CategoryTile";
 import { EmptyState } from "@/views/EmptyState";
 import { ProductCard } from "@/views/ProductCard";
 
+const ICON_MUTED = "rgba(15,42,61,0.35)";
 const GRID_COLUMNS = 3;
 
 type Filler = { id: string; filler: true };
@@ -76,7 +77,7 @@ export default function Search() {
       {searching ? (
         loadingProducts ? (
           <View className="flex-1 items-center justify-center">
-
+            <ActivityIndicator color="#1B87C9" />
           </View>
         ) : (
           <FlatList

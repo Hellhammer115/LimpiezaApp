@@ -38,7 +38,14 @@ export default function ForgotPassword() {
       await requestPasswordReset(email, captchaToken);
       router.push(`/reset-password?email=${encodeURIComponent(email)}`);
     } catch (error) {
-      
+      if (error instanceof CaptchaCancelled) {
+        Alert.alert("Verificación", "Completa la verificación para continuar.");
+        return;
+      }
+      if (isCaptchaError(error)) {
+        Alert.alert("Verificación", "La verificación falló, intenta de nuevo.");
+        return;
+      }
       if (__DEV__) console.error("[forgot-password] reset request failed:", error);
       // 429 = Supabase's per-address e-mail send limit; it applies whether or
       // not the account exists, so naming it reveals nothing.

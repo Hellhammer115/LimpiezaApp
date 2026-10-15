@@ -30,7 +30,23 @@ export function FormInput<T extends FieldValues>({
       render={({ field: { value, onChange, onBlur }, fieldState }) => (
         <View className="mb-4 w-full">
           <Text className="label mb-1">{label}</Text>
-
+          <View className="relative justify-center">
+            <TextInput
+              value={value ?? ""}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              placeholderTextColor="rgba(15,42,61,0.35)"
+              className={`input ${trailing ? "pr-12" : ""} ${
+                fieldState.error ? "border-coral" : "border-dark-100/15"
+              }`}
+              {...inputProps}
+            />
+            {trailing ? (
+              <View className="absolute bottom-0 right-0 top-0 justify-center pr-3">
+                {trailing}
+              </View>
+            ) : null}
+          </View>
           {fieldState.error ? (
             <Text className="mt-1 pl-2 font-quicksand-medium text-xs text-coral">
               {fieldState.error.message}

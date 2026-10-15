@@ -30,7 +30,7 @@ export function PasswordInput<T extends FieldValues>(props: Props<T>) {
           <Ionicons
             name={visible ? "eye-off-outline" : "eye-outline"}
             size={22}
-            color="rgba(16,36,31,0.55)"
+            color="rgba(15,42,61,0.55)"
           />
         </Pressable>
       }
