@@ -14,7 +14,7 @@ const C = {
   bebidas: "c0000000-0000-4000-8000-000000000005",
 };
 
-const demoCategoryDefaults = { is_active: true, updated_at: new Date().toISOString(), updated_by: null };
+const demoCategoryDefaults = { is_active: true, image_url: null, updated_at: new Date().toISOString(), updated_by: null };
 
 export const DEMO_CATEGORIES: Category[] = [
   { id: C.ofertas, name: "Ofertas", icon: "flash-outline", sort_order: 0, ...demoCategoryDefaults },

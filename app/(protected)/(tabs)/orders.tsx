@@ -1,12 +1,13 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useOrders } from "@/controllers/useOrders";
 import type { OrderKind } from "@/models/types";
 import { EmptyState } from "@/views/EmptyState";
 import { OrderCard } from "@/views/OrderCard";
+import { Chip } from "@/views/Chip";
 
 const FILTERS: { kind: OrderKind; label: string }[] = [
   { kind: "quotes", label: "Cotizaciones" },
@@ -29,11 +30,7 @@ export default function Orders() {
         {FILTERS.map((f) => {
           const active = f.kind === kind;
           return (
-            <Pressable key={f.kind} onPress={() => setKind(f.kind)} className={active ? "chip-active" : "chip"}>
-              <Text className={`font-quicksand-semibold text-sm ${active ? "text-white" : "text-dark-100"}`}>
-                {f.label}
-              </Text>
-            </Pressable>
+            <Chip key={f.kind} label={f.label} active={active} onPress={() => setKind(f.kind)} />
           );
         })}
       </View>

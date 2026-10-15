@@ -1,10 +1,11 @@
 // CONTROLLER — admin orders: everyone's cotizaciones/pedidos plus the
 // admin's edit/send/reject/advance actions. Only mounted behind useIsAdmin.
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { Alert } from "react-native";
 
 import {
+  ADMIN_ORDERS_PAGE,
   advanceOrder,
   createQuoteForCustomer,
   lookupCustomers,
@@ -22,11 +23,19 @@ import type {
   QuoteEditInput,
 } from "@/models/types";
 
-/** All rows of one kind, newest first. `enabled` = false for non-admin mounts. */
+/**
+ * Rows of one kind, newest first, loaded a page at a time — call
+ * `fetchNextPage()` as the list nears its end. `enabled` = false for
+ * non-admin mounts.
+ */
 export function useAdminOrders(kind: OrderKind, search?: string, enabled = true) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["admin-orders", kind, search ?? ""],
-    queryFn: () => listAdminOrders(kind, search),
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => listAdminOrders(kind, search, pageParam),
+    getNextPageParam: (lastPage, _pages, lastOffset) =>
+      lastPage.length === ADMIN_ORDERS_PAGE ? lastOffset + ADMIN_ORDERS_PAGE : undefined,
+    select: (data) => data.pages.flat(),
     enabled,
   });
 }

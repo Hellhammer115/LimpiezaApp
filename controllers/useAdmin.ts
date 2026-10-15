@@ -1,7 +1,7 @@
 // CONTROLLER — admin: gates the admin section and exposes full-catalog
 // CRUD to admin views. Disabled entirely outside a real session (and
 // always false in demo mode, which has no backend).
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/controllers/useAuth";
 import {
@@ -11,10 +11,12 @@ import {
   deleteCategory,
   deleteProduct,
   listAllCategories,
+  ADMIN_PRODUCTS_PAGE,
+  getAdminProduct,
   listAllProducts,
   updateCategory,
   updateProduct,
-  uploadProductImage,
+  uploadCatalogImage,
   type CategoryInput,
   type ProductInput,
 } from "@/models/adminModel";
@@ -31,11 +33,27 @@ export function useIsAdmin() {
   });
 }
 
-/** All products (active + inactive), for the admin list/search screen. */
+/**
+ * All products (active + inactive) for the admin list/search screen, loaded
+ * a page at a time — call `fetchNextPage()` as the list nears its end.
+ */
 export function useAdminProducts(search?: string) {
+  return useInfiniteQuery({
+    queryKey: ["admin-products", "list", search ?? ""],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => listAllProducts(search, pageParam),
+    getNextPageParam: (lastPage, _pages, lastOffset) =>
+      lastPage.length === ADMIN_PRODUCTS_PAGE ? lastOffset + ADMIN_PRODUCTS_PAGE : undefined,
+    select: (data) => data.pages.flat(),
+  });
+}
+
+/** One product for the edit screen, fetched by id (works past any page). */
+export function useAdminProduct(id: string | undefined) {
   return useQuery({
-    queryKey: ["admin-products", search ?? ""],
-    queryFn: () => listAllProducts(search),
+    queryKey: ["admin-products", "one", id],
+    enabled: !!id,
+    queryFn: () => getAdminProduct(id!),
   });
 }
 
@@ -73,10 +91,11 @@ export function useDeleteProduct() {
   });
 }
 
-export function useUploadProductImage() {
+/** Uploads a picked photo for a product (default) or a category; resolves its public URL. */
+export function useUploadCatalogImage(kind: "product" | "category" = "product") {
   return useMutation({
     mutationFn: ({ uri, width, height }: { uri: string; width: number; height: number }) =>
-      uploadProductImage(uri, width, height),
+      uploadCatalogImage(uri, width, height, kind),
   });
 }
 

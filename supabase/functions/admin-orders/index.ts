@@ -96,16 +96,22 @@ Deno.serve(async (req) => {
       const params = new URL(req.url).searchParams;
       const kind = params.get("kind") === "orders" ? "orders" : "quotes";
       const search = params.get("search")?.trim();
+      // One page, newest first. Paged like admin-products: the lists grow
+      // without bound and PostgREST caps a response at 1000 rows.
+      const offset = Math.max(0, parseInt(params.get("offset") ?? "0", 10) || 0);
+      const limit = Math.min(100, Math.max(1, parseInt(params.get("limit") ?? "30", 10) || 30));
       let query = admin
         .from("orders")
         .select(ORDER_WITH_ITEMS)
         .is("hidden_by_admin_at", null)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .order("id") // stable tie-break so pages never skip/repeat rows
+        .range(offset, offset + limit - 1);
       query = kind === "orders" ? query.not("paid_at", "is", null) : query.is("paid_at", null);
       if (search) {
-        query = query.or(
-          `customer_name.ilike.%${search}%,customer_email.ilike.%${search}%`
-        );
+        // Quoted so commas/parens in the search text can't break out of or().
+        const pattern = `"%${search.replace(/["\\]/g, (c) => `\\${c}`)}%"`;
+        query = query.or(`customer_name.ilike.${pattern},customer_email.ilike.${pattern}`);
       }
       const { data, error } = await query;
       if (error) throw error;

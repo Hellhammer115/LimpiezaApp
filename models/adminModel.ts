@@ -5,7 +5,9 @@
 import { functionErrorMessage } from "@/models/functionError";
 import type { AdminCategory, AdminProduct } from "@/models/types";
 import { supabase } from "@/services/supabase";
+import { File } from "expo-file-system";
 import * as ImageManipulator from "expo-image-manipulator";
+import { Platform } from "react-native";
 
 /** True when the given user id has a row in admin_users. */
 export async function checkIsAdmin(userId: string): Promise<boolean> {
@@ -44,9 +46,25 @@ export async function invokeAdminFunction<T>(
   return data as T;
 }
 
-/** All products (active + inactive), optionally filtered by name. */
-export async function listAllProducts(search?: string): Promise<AdminProduct[]> {
-  return invokeAdminFunction<AdminProduct[]>("admin-products", "GET", undefined, { search });
+/** Page size of the admin product list. */
+export const ADMIN_PRODUCTS_PAGE = 50;
+
+/**
+ * One page of all products (active + inactive), ordered by name, optionally
+ * filtered by name or Clave. Paged because the catalog exceeds PostgREST's
+ * 1000-row response cap.
+ */
+export async function listAllProducts(search: string | undefined, offset: number): Promise<AdminProduct[]> {
+  return invokeAdminFunction<AdminProduct[]>("admin-products", "GET", undefined, {
+    search,
+    offset: String(offset),
+    limit: String(ADMIN_PRODUCTS_PAGE),
+  });
+}
+
+/** A single product by id (active or not), for the edit screen. */
+export async function getAdminProduct(id: string): Promise<AdminProduct> {
+  return invokeAdminFunction<AdminProduct>("admin-products", "GET", undefined, { id });
 }
 
 export interface ProductInput {
@@ -92,6 +110,7 @@ export async function listAllCategories(): Promise<AdminCategory[]> {
 export interface CategoryInput {
   name: string;
   icon: string;
+  image_url: string | null;
   sort_order: number;
   is_active: boolean;
 }
@@ -115,15 +134,37 @@ export async function deleteCategory(id: string): Promise<AdminCategory> {
 }
 
 /**
- * Resizes the picked image so its longest edge is ≤1200px, re-encodes it as
- * JPEG (~0.8 quality), uploads it to the product-images bucket, and returns
- * its public URL. `width`/`height` come from the picker's asset metadata —
- * they decide which edge to constrain so portrait photos aren't stretched.
+ * Reads a local image into bytes. On native, `fetch(file://…)` can resolve
+ * with a "File not found" text body instead of failing, and that text got
+ * uploaded as a 14-byte ".jpg"; expo-file-system reads the file directly.
+ * Web picker URIs are blob:/data: URLs, which fetch handles fine.
  */
-export async function uploadProductImage(
+async function readImageBytes(uri: string): Promise<ArrayBuffer> {
+  let bytes: ArrayBuffer;
+  if (Platform.OS === "web") {
+    const response = await fetch(uri);
+    if (!response.ok) throw new Error("No se pudo leer la imagen.");
+    bytes = await response.arrayBuffer();
+  } else {
+    bytes = await new File(uri).arrayBuffer();
+  }
+  // Never upload an empty/garbage body as an image.
+  if (bytes.byteLength < 1024) throw new Error("No se pudo leer la imagen.");
+  return bytes;
+}
+
+/**
+ * Resizes the picked image so its longest edge is ≤1200px, re-encodes it as
+ * JPEG (~0.8 quality), uploads it to the product-images bucket (category
+ * photos under a categories/ prefix), and returns its public URL.
+ * `width`/`height` come from the picker's asset metadata — they decide which
+ * edge to constrain so portrait photos aren't stretched.
+ */
+export async function uploadCatalogImage(
   uri: string,
   width: number,
-  height: number
+  height: number,
+  kind: "product" | "category" = "product"
 ): Promise<string> {
   const longestEdge = Math.max(width, height);
   const actions =
@@ -135,9 +176,9 @@ export async function uploadProductImage(
     format: ImageManipulator.SaveFormat.JPEG,
   });
 
-  const response = await fetch(manipulated.uri);
-  const arrayBuffer = await response.arrayBuffer();
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+  const arrayBuffer = await readImageBytes(manipulated.uri);
+  const prefix = kind === "category" ? "categories/" : "";
+  const path = `${prefix}${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
 
   const { error } = await supabase.storage
     .from("product-images")
