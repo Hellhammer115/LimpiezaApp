@@ -9,15 +9,13 @@ import { z } from "zod";
 import { FormInput } from "@/views/FormInput";
 import { PrimaryButton } from "@/views/PrimaryButton";
 import { ScreenHeader } from "@/views/ScreenHeader";
+import { nameSchema, phoneSchema } from "@/controllers/useAuth";
 import { useProfile, useUpdateProfile } from "@/controllers/useProfile";
 
 const schema = z.object({
-  name: z.string().trim().min(1, "Ingresa tu nombre"),
-  last_name: z.string().trim().min(1, "Ingresa tu apellido"),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\d{10}$/, "Teléfono a 10 dígitos"),
+  name: nameSchema("Ingresa tu nombre"),
+  last_name: nameSchema("Ingresa tu apellido"),
+  phone: phoneSchema,
 });
 
 type FormValues = z.infer<typeof schema>;

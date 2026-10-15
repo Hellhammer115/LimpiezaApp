@@ -6,9 +6,18 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "r
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { requestPasswordReset, resetPassword } from "@/controllers/useAuth";
+import {
+  isCaptchaError,
+  isWeakPasswordError,
+  passwordSchema,
+  requestPasswordReset,
+  resetPassword,
+} from "@/controllers/useAuth";
+import { CaptchaCancelled } from "@/views/captchaTypes";
 import { FormInput } from "@/views/FormInput";
+import { PasswordInput } from "@/views/PasswordInput";
 import { PrimaryButton } from "@/views/PrimaryButton";
+import { useCaptcha } from "@/views/useCaptcha";
 
 const schema = z
   .object({
@@ -19,11 +28,7 @@ const schema = z
       .string()
       .trim()
       .regex(/^\d{6}$/, "Código de 6 dígitos"),
-    password: z
-      .string()
-      .min(8, "Mínimo 8 caracteres")
-      .regex(/[A-Za-z]/, "Debe incluir letras")
-      .regex(/\d/, "Debe incluir números"),
+    password: passwordSchema,
     confirm: z.string(),
   })
   .refine((data) => data.password === data.confirm, {
@@ -42,6 +47,7 @@ type FormValues = z.infer<typeof schema>;
 export default function ResetPassword() {
   const { email } = useLocalSearchParams<{ email: string }>();
   const [submitting, setSubmitting] = useState(false);
+  const captcha = useCaptcha();
   const { control, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { code: "", password: "", confirm: "" },
@@ -54,7 +60,11 @@ export default function ResetPassword() {
       await resetPassword(email, code, password);
       // The new session makes the (auth) guard land the user on home.
       Alert.alert("Listo", "Tu contraseña fue actualizada.");
-    } catch {
+    } catch (error) {
+      if (isWeakPasswordError(error)) {
+        Alert.alert("Contraseña no válida", "La contraseña no cumple los requisitos.");
+        return;
+      }
       Alert.alert(
         "Código inválido",
         "El código es incorrecto o expiró. Solicita uno nuevo."
@@ -67,10 +77,17 @@ export default function ResetPassword() {
   const resend = async () => {
     if (!email) return;
     try {
-      await requestPasswordReset(email);
+      const captchaToken = await captcha.execute();
+      await requestPasswordReset(email, captchaToken);
       Alert.alert("Código enviado", "Revisa tu correo de nuevo.");
-    } catch {
-      Alert.alert("Error", "No se pudo reenviar el código.");
+    } catch (error) {
+      if (error instanceof CaptchaCancelled) {
+        Alert.alert("Verificación", "Completa la verificación para continuar.");
+      } else if (isCaptchaError(error)) {
+        Alert.alert("Verificación", "La verificación falló, intenta de nuevo.");
+      } else {
+        Alert.alert("Error", "No se pudo reenviar el código.");
+      }
     }
   };
 
@@ -100,20 +117,18 @@ export default function ResetPassword() {
             maxLength={6}
             autoComplete="one-time-code"
           />
-          <FormInput
+          <PasswordInput
             control={control}
             name="password"
             label="Nueva contraseña"
-            placeholder="Mínimo 8 caracteres"
-            secureTextEntry
+            placeholder="Mínimo 8 caracteres, letras y números"
             autoComplete="new-password"
           />
-          <FormInput
+          <PasswordInput
             control={control}
             name="confirm"
             label="Confirmar contraseña"
             placeholder="Repite tu contraseña"
-            secureTextEntry
             autoComplete="new-password"
           />
 
@@ -144,6 +159,7 @@ export default function ResetPassword() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      {captcha.element}
     </SafeAreaView>
   );
 }

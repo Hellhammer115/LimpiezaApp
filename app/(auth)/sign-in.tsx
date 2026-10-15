@@ -6,9 +6,12 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "r
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
-import { signIn } from "@/controllers/useAuth";
+import { isCaptchaError, signIn } from "@/controllers/useAuth";
+import { CaptchaCancelled } from "@/views/captchaTypes";
 import { FormInput } from "@/views/FormInput";
+import { PasswordInput } from "@/views/PasswordInput";
 import { PrimaryButton } from "@/views/PrimaryButton";
+import { useCaptcha } from "@/views/useCaptcha";
 
 const schema = z.object({
   email: z.string().trim().email("Correo inválido"),
@@ -20,6 +23,7 @@ type FormValues = z.infer<typeof schema>;
 /** VIEW — sign-in screen: validates the form and delegates to the auth controller. */
 export default function SignIn() {
   const [submitting, setSubmitting] = useState(false);
+  const captcha = useCaptcha();
   const { control, handleSubmit } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
@@ -29,10 +33,17 @@ export default function SignIn() {
   const onSubmit = handleSubmit(async ({ email, password }) => {
     setSubmitting(true);
     try {
-      await signIn(email, password);
-    } catch {
-      // Generic message: never reveal whether the email exists.
-      Alert.alert("Error", "Correo o contraseña incorrectos.");
+      const captchaToken = await captcha.execute();
+      await signIn(email, password, captchaToken);
+    } catch (error) {
+      if (error instanceof CaptchaCancelled) {
+        Alert.alert("Verificación", "Completa la verificación para continuar.");
+      } else if (isCaptchaError(error)) {
+        Alert.alert("Verificación", "La verificación falló, intenta de nuevo.");
+      } else {
+        // Generic message: never reveal whether the email exists.
+        Alert.alert("Error", "Correo o contraseña incorrectos.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -64,12 +75,11 @@ export default function SignIn() {
             autoCapitalize="none"
             autoComplete="email"
           />
-          <FormInput
+          <PasswordInput
             control={control}
             name="password"
             label="Contraseña"
             placeholder="Tu contraseña"
-            secureTextEntry
             autoComplete="password"
           />
 
@@ -101,6 +111,7 @@ export default function SignIn() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      {captcha.element}
     </SafeAreaView>
   );
 }
