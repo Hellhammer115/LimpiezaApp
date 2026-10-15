@@ -33,8 +33,17 @@ export default function ForgotPassword() {
     try {
       await requestPasswordReset(email);
       router.push(`/reset-password?email=${encodeURIComponent(email)}`);
-    } catch {
-      Alert.alert("Error", "No se pudo enviar el código. Intenta de nuevo.");
+    } catch (error) {
+      if (__DEV__) console.error("[forgot-password] reset request failed:", error);
+      // 429 = Supabase's per-address e-mail send limit; it applies whether or
+      // not the account exists, so naming it reveals nothing.
+      const rateLimited = (error as { status?: number } | null)?.status === 429;
+      Alert.alert(
+        "Error",
+        rateLimited
+          ? "Ya enviamos un código hace poco. Espera unos minutos e intenta de nuevo."
+          : "No se pudo enviar el código. Intenta de nuevo."
+      );
     } finally {
       setSubmitting(false);
     }
